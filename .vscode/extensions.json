@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "marus25.cortex-debug",
+        "josetr.cmake-language-support-vscode",
+        "llvm-vs-code-extensions.vscode-clangd"
+    ]
+}
