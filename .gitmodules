@@ -7,3 +7,9 @@
 [submodule "External/stm32/stm32f7xx-hal-driver"]
 	path = External/stm32/stm32f7xx-hal-driver
 	url = https://github.com/STMicroelectronics/stm32f7xx-hal-driver
+[submodule "External/FreeRTOS-Kernel"]
+	path = External/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel
+[submodule "External/microhttp"]
+	path = External/microhttp
+	url = https://github.com/leak-guard/microhttp

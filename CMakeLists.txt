@@ -10,10 +10,10 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 
 # Configure FreeRTOS-Kernel
-#add_library(freertos_config INTERFACE)
-#target_include_directories(freertos_config SYSTEM INTERFACE FreeRTOS) # The config file directory
-#target_compile_definitions(freertos_config INTERFACE projCOVERAGE_TEST=0)
-#set(FREERTOS_PORT "GCC_ARM_CM4F")
+add_library(freertos_config INTERFACE)
+target_include_directories(freertos_config SYSTEM INTERFACE FreeRTOS) # The config file directory
+target_compile_definitions(freertos_config INTERFACE projCOVERAGE_TEST=0)
+set(FREERTOS_PORT "GCC_ARM_CM7")
 
 # Add dependencies
 add_subdirectory(External)
@@ -22,15 +22,17 @@ set(STARTUP_ASM "startup_stm32f746xx.s")
 
 file(GLOB_RECURSE SOURCES 
     "Core/Src/*.*"
+    "Firmware/Src/*.*"
 )
 
 include_directories(
     Core/Inc
+    Firmware/Inc
 )
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${STARTUP_ASM} ${LINKER_SCRIPT})
 target_include_directories(${PROJECT_NAME}.elf PRIVATE "${PROJECT_BINARY_DIR}")
-#target_link_libraries(${PROJECT_NAME}.elf PRIVATE freertos_kernel microhttp stm32f4xx-hal-driver)
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE freertos_kernel microhttp)
 target_link_libraries(${PROJECT_NAME}.elf PRIVATE stm32f7xx-hal-driver)
 
 # Pass HAL config to driver
