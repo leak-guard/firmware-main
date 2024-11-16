@@ -31,7 +31,7 @@ void EspSocketImpl::init()
             taskName.ToCStr() /* Task name */,
             m_workerTaskStack.at(i).size() /* Stack size */,
             &m_workerParams.at(i) /* parameters */,
-            3 /* Prority */,
+            4 /* Prority */,
             m_workerTaskStack.at(i).data() /* Task stack address */,
             &m_workerTaskTcb.at(i) /* Task control block */
         );

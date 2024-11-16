@@ -6,7 +6,7 @@ namespace lg {
 
 void Server::initHttpEntryPoint(void* params)
 {
-    Server* instance = reinterpret_cast<Server*>(params);
+    auto instance = reinterpret_cast<Server*>(params);
     instance->initHttpMain();
 }
 

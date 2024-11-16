@@ -46,7 +46,7 @@ void EspAtDriver::initialize()
         "ESP Uart RX" /* Task name */,
         m_uartRxTaskStack.size() /* Stack size */,
         this /* parameters */,
-        4 /* Prority */,
+        5 /* Prority */,
         m_uartRxTaskStack.data() /* Task stack address */,
         &m_uartRxTaskTcb /* Task control block */
     );
@@ -56,7 +56,7 @@ void EspAtDriver::initialize()
         "ESP Conn Closer" /* Task name */,
         m_connectionCloserTaskStack.size() /* Stack size */,
         this /* parameters */,
-        2 /* Prority */,
+        3 /* Prority */,
         m_connectionCloserTaskStack.data() /* Task stack address */,
         &m_connectionCloserTaskTcb /* Task control block */
     );

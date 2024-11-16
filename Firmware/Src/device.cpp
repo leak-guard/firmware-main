@@ -29,6 +29,7 @@ void Device::initializeDrivers()
     m_oledDriver->initialize();
 
     m_server->initialize();
+    m_uiService->initialize();
 }
 
 void Device::setError(ErrorCode code)

@@ -3,6 +3,7 @@
 #include "drivers/oled.hpp"
 #include "scoped-res.hpp"
 #include "server.hpp"
+#include "ui.hpp"
 
 #include <optional>
 
@@ -27,8 +28,9 @@ public:
 
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
-    
+
     ScopedResource<Server> getHttpServer() { return m_server; }
+    ScopedResource<UiService> getUiService() { return m_uiService; }
 
 private:
     static std::optional<Device> m_instance;
@@ -40,6 +42,7 @@ private:
 
     // Services
     ProtectedResource<Server> m_server;
+    ProtectedResource<UiService> m_uiService;
 };
 
 };

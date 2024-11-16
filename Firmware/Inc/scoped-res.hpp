@@ -2,8 +2,8 @@
 #include <FreeRTOS.h>
 #include <semphr.h>
 
-#include <utility>
 #include <stm32f7xx_hal.h>
+#include <utility>
 
 namespace lg {
 
@@ -15,6 +15,7 @@ class ScopedResource;
 template <typename T>
 class ProtectedResource {
     friend class ScopedResource<T>;
+
 public:
     template <class... Args>
     ProtectedResource(Args&&... args)
@@ -43,7 +44,6 @@ private:
     SemaphoreHandle_t m_mutex {};
     StaticSemaphore_t m_mutexBlock {};
 };
-
 
 template <typename T>
 class ScopedResource {

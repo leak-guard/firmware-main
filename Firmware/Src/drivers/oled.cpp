@@ -1,10 +1,11 @@
 #include "main.h"
 #include "stm32f7xx_hal_gpio.h"
+#include "stm32f7xx_hal_i2c.h"
 #include "u8g2.h"
 #include <drivers/oled.hpp>
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <cstdint>
 
 #include <FreeRTOS.h>
@@ -29,30 +30,23 @@ static uint8_t u8x8_byte_stm32hal_hw_i2c(u8x8_t* u8x8, uint8_t msg, uint8_t arg_
     static uint8_t buf_idx;
     uint8_t* data = nullptr;
 
-    switch (msg)
-    {
-    case U8X8_MSG_BYTE_SEND:
-    {
+    switch (msg) {
+    case U8X8_MSG_BYTE_SEND: {
         data = reinterpret_cast<uint8_t*>(arg_ptr);
-        while (arg_int > 0)
-        {
+        while (arg_int > 0) {
             buffer.at(buf_idx++) = *data;
             data++;
             arg_int--;
         }
-    }
-    break;
+    } break;
     case U8X8_MSG_BYTE_INIT:
         break;
     case U8X8_MSG_BYTE_SET_DC:
         break;
-    case U8X8_MSG_BYTE_START_TRANSFER:
-    {
+    case U8X8_MSG_BYTE_START_TRANSFER: {
         buf_idx = 0;
-    }
-    break;
-    case U8X8_MSG_BYTE_END_TRANSFER:
-    {
+    } break;
+    case U8X8_MSG_BYTE_END_TRANSFER: {
         uint8_t iaddress = I2C_ADDRESS;
         auto result = HAL_I2C_Master_Transmit(
             display->i2c, I2C_ADDRESS, &buffer[0], buf_idx, 1000u);
@@ -60,8 +54,7 @@ static uint8_t u8x8_byte_stm32hal_hw_i2c(u8x8_t* u8x8, uint8_t msg, uint8_t arg_
         if (result != HAL_OK) {
             // TODO: device error
         }
-    }
-    break;
+    } break;
     default:
         return 0;
     }
@@ -70,13 +63,12 @@ static uint8_t u8x8_byte_stm32hal_hw_i2c(u8x8_t* u8x8, uint8_t msg, uint8_t arg_
 
 static uint8_t psoc_gpio_and_delay_cb(u8x8_t* u8x8, uint8_t msg, uint8_t arg_int, void* arg_ptr)
 {
-    switch (msg)
-    {
+    switch (msg) {
     case U8X8_MSG_GPIO_AND_DELAY_INIT:
         break;
-    case U8X8_MSG_DELAY_NANO:
-    {
-        for (volatile uint32_t i = 1; i <= arg_int * 10; i = i + 1);
+    case U8X8_MSG_DELAY_NANO: {
+        for (volatile uint32_t i = 1; i <= arg_int * 10; i = i + 1)
+            ;
         break;
     }
 
@@ -125,7 +117,7 @@ static inline HAL_StatusTypeDef oledSendCommand(I2C_HandleTypeDef* i2c, std::uin
 
 void OledDriver::sendBufferDma()
 {
-    while (HAL_DMA_GetState(m_displayInfo.i2c->hdmatx) != HAL_DMA_STATE_READY) {
+    while (HAL_I2C_GetState(m_displayInfo.i2c) != HAL_I2C_STATE_READY) {
         vTaskDelay(1);
     }
 
@@ -141,7 +133,7 @@ void OledDriver::sendBufferDma()
     oledSendCommand(m_displayInfo.i2c, 0x00);
     oledSendCommand(m_displayInfo.i2c, WIDTH - 1);
 
-    HAL_I2C_Mem_Write_DMA(m_displayInfo.i2c, 
+    HAL_I2C_Mem_Write_DMA(m_displayInfo.i2c,
         I2C_ADDRESS, SSD1306_SETSTARTLINE, 1, m_txBuffer.data(), m_txBuffer.size());
 }
 

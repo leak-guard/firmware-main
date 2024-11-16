@@ -3,7 +3,10 @@
 
 #include <leakguard/microhttp.hpp>
 
+#include <array>
+
 #include <FreeRTOS.h>
+#include <task.h>
 
 namespace lg {
 
