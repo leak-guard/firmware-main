@@ -75,8 +75,8 @@ your application. */
 
 /* Interrupt nesting behaviour configuration. */
 #define configKERNEL_INTERRUPT_PRIORITY         0xFF
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY    0x10
-#define configMAX_API_CALL_INTERRUPT_PRIORITY   0x10
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY    0x30
+#define configMAX_API_CALL_INTERRUPT_PRIORITY   0x30
 
 /* Define to trap errors during development. */
 //#define configASSERT( ( x ) ) if( ( x ) == 0 ) vAssertCalled( __FILE__, __LINE__ )

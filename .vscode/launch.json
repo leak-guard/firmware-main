@@ -17,8 +17,7 @@
                 "samplesPerSecond": 5
             },
             "serverArgs": [ "-c gdb_breakpoint_override hard"],
-            "svdFile": "Svd/stm32f7x6.svd",
-            "showDevDebugOutput": "both"
+            "svdFile": "Svd/stm32f7x6.svd"
         }
     ]
 }

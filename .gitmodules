@@ -13,3 +13,6 @@
 [submodule "External/microhttp"]
 	path = External/microhttp
 	url = https://github.com/leak-guard/microhttp
+[submodule "External/u8g2"]
+	path = External/u8g2
+	url = https://github.com/olikraus/u8g2

@@ -1,5 +1,7 @@
 #pragma once
 #include "drivers/esp-at.hpp"
+#include "drivers/oled.hpp"
+#include "scoped-res.hpp"
 #include "server.hpp"
 
 #include <optional>
@@ -24,14 +26,20 @@ public:
     void setError(ErrorCode code);
 
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
-    Server& getHttpServer() { return m_server; }
+    ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
+    
+    ScopedResource<Server> getHttpServer() { return m_server; }
 
 private:
     static std::optional<Device> m_instance;
     volatile ErrorCode m_error { ErrorCode::NO_ERROR };
 
+    // Drivers
     EspAtDriver m_espDriver;
-    Server m_server;
+    ProtectedResource<OledDriver> m_oledDriver;
+
+    // Services
+    ProtectedResource<Server> m_server;
 };
 
 };
