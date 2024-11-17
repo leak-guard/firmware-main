@@ -16,6 +16,7 @@
 #define ESP_RESPONSE_BUFFER_SIZE 2048
 #define ESP_AP_LIST_SIZE 20
 #define ESP_IP_STRING_SIZE 16
+#define ESP_MAC_STRING_SIZE 20
 #define ESP_RX_DONE (1 << 0)
 #define ESP_READY (1 << 1)
 
@@ -121,6 +122,9 @@ public:
     EspResponse disableMdns();
     EspResponse enableMdns(const char* hostname, const char* service, std::uint16_t port);
     EspResponse setHostname(const char* hostname);
+    EspResponse getRssi(int& rssiOut);
+    EspResponse getStationMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out);
+    EspResponse getApMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out);
 
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 

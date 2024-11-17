@@ -303,6 +303,74 @@ auto EspAtDriver::setHostname(const char* hostname) -> EspResponse
     return sendCommandBufferAndWait();
 }
 
+auto EspAtDriver::getRssi(int& rssiOut) -> EspResponse
+{
+    auto lock = acquireLock();
+    setResponsePrefix("+CWJAP:");
+    auto response = sendCommandDirectAndWait("AT+CWJAP?");
+
+    if (response == EspResponse::OK) {
+        static constexpr auto COMMAS_TO_SKIP = 3;
+
+        int commaCount = 0;
+        int startIndex = 0;
+        int endIndex = 0;
+        for (int i = 0; i < m_responseBuffer.GetSize(); ++i) {
+            if (m_responseBuffer[i] == ',') {
+                ++commaCount;
+
+                if (commaCount == COMMAS_TO_SKIP) {
+                    startIndex = i;
+                } else if (commaCount == COMMAS_TO_SKIP + 1) {
+                    endIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (endIndex == 0) {
+            return EspResponse::ERROR;
+        }
+
+        m_responseBuffer.Truncate(endIndex);
+        m_responseBuffer.Skip(startIndex + 1);
+
+        rssiOut = m_responseBuffer.ToInteger<int>();
+    }
+
+    return response;
+}
+
+auto EspAtDriver::getStationMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out) -> EspResponse
+{
+    auto lock = acquireLock();
+    setResponsePrefix("+CIPSTAMAC:");
+    auto response = sendCommandDirectAndWait("AT+CIPSTAMAC?");
+
+    if (response == EspResponse::OK) {
+        m_responseBuffer.Skip(11); // Length of "+CIPSTAMAC:"
+        m_responseBuffer.Truncate(17); // MAC address length
+        out = m_responseBuffer;
+    }
+
+    return response;
+}
+
+auto EspAtDriver::getApMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out) -> EspResponse
+{
+    auto lock = acquireLock();
+    setResponsePrefix("+CIPAPMAC:");
+    auto response = sendCommandDirectAndWait("AT+CIPAPMAC?");
+
+    if (response == EspResponse::OK) {
+        m_responseBuffer.Skip(10); // Length of "+CIPAPMAC:"
+        m_responseBuffer.Truncate(17); // MAC address length
+        out = m_responseBuffer;
+    }
+
+    return response;
+}
+
 void EspAtDriver::initTaskMain()
 {
     {
