@@ -1,10 +1,25 @@
+#include "drivers/oled.hpp"
 #include "u8g2.h"
 #include <ui.hpp>
 
 #include <device.hpp>
 #include <leakguard/staticstring.hpp>
 
+// Bitmaps
+#include <bitmaps/hotspot.xbm>
+#include <bitmaps/splashscreen.xbm>
+#include <bitmaps/wifi_conn.xbm>
+#include <bitmaps/wifi_pass.xbm>
+#include <bitmaps/wifi_sig0.xbm>
+#include <bitmaps/wifi_sig1.xbm>
+#include <bitmaps/wifi_sig2.xbm>
+#include <bitmaps/wifi_sig3.xbm>
+#include <bitmaps/wifi_sig4.xbm>
+#include <bitmaps/wifi_user.xbm>
+
 #include <rtc.h>
+
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 namespace lg {
 
@@ -29,51 +44,123 @@ void UiService::initialize()
 
 void UiService::uiServiceMain()
 {
-    StaticString<30> timeText;
-
     while (true) {
-        auto oledDriver = Device::get().getOledDriver();
-        auto u8g2 = oledDriver->getU8g2Handle();
-
-        timeText.Clear();
-
-        RTC_DateTypeDef rtcDate {};
-        RTC_TimeTypeDef rtcTime {};
-
-        HAL_RTC_GetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
-        HAL_RTC_GetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
-
-        if (rtcDate.Date < 10)
-            timeText += '0';
-        timeText += StaticString<2>::Of(rtcDate.Date);
-        timeText += '-';
-        if (rtcDate.Month < 10)
-            timeText += '0';
-        timeText += StaticString<2>::Of(rtcDate.Month);
-        timeText += '-';
-        if (rtcDate.Year < 10)
-            timeText += '0';
-        timeText += StaticString<2>::Of(rtcDate.Year);
-        timeText += ' ';
-        if (rtcTime.Hours < 10)
-            timeText += '0';
-        timeText += StaticString<2>::Of(rtcTime.Hours);
-        timeText += ':';
-        if (rtcTime.Minutes < 10)
-            timeText += '0';
-        timeText += StaticString<2>::Of(rtcTime.Minutes);
-        timeText += ':';
-        if (rtcTime.Seconds < 10)
-            timeText += '0';
-        timeText += StaticString<2>::Of(rtcTime.Seconds);
-
-        u8g2_ClearBuffer(u8g2);
-        u8g2_SetFont(u8g2, u8g2_font_prospero_bold_nbp_tr);
-        u8g2_DrawStr(u8g2, 0, 12, timeText.ToCStr());
-
-        oledDriver->sendBufferDma();
+        refreshDisplay();
         vTaskDelay(10);
     }
 }
 
+void UiService::refreshDisplay()
+{
+    static constexpr auto SPLASH_SCREEN_TIME_MS = 3000;
+
+    auto oledDriver = Device::get().getOledDriver();
+    auto u8g2 = oledDriver->getU8g2Handle();
+
+    if (xTaskGetTickCount() > SPLASH_SCREEN_TIME_MS) {
+        m_splashScreenHidden = true;
+    }
+
+    if (!m_splashScreenHidden) {
+        drawSplashScreen(u8g2);
+    } else {
+        drawStatusBar(u8g2);
+
+        if (Device::get().getSignalStrength() == Device::SignalStrength::HOTSPOT) {
+            drawAccessPointCredentials(u8g2);
+        }
+    }
+
+    oledDriver->sendBufferDma();
+}
+
+void UiService::drawSplashScreen(u8g2_struct* u8g2)
+{
+    u8g2_DrawXBM(u8g2, 0, 0, splashscreen_width, splashscreen_height, splashscreen_bits);
+}
+
+void UiService::drawStatusBar(u8g2_struct* u8g2)
+{
+    RTC_DateTypeDef rtcDate {};
+    RTC_TimeTypeDef rtcTime {};
+
+    HAL_RTC_GetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
+
+    // TODO: draw local time, not RTC/UTC time
+
+    u8g2_ClearBuffer(u8g2);
+    u8g2_SetFont(u8g2, u8g2_font_crox1cb_mn);
+    u8g2_DrawGlyph(u8g2, 0, 15, '0' + rtcDate.Date / 10);
+    u8g2_DrawGlyph(u8g2, 8, 15, '0' + rtcDate.Date % 10);
+    u8g2_DrawBox(u8g2, 18, 13, 2, 2);
+    u8g2_DrawGlyph(u8g2, 20, 15, '0' + rtcDate.Month / 10);
+    u8g2_DrawGlyph(u8g2, 28, 15, '0' + rtcDate.Month % 10);
+
+    u8g2_DrawGlyph(u8g2, 40, 15, '0' + rtcTime.Hours / 10);
+    u8g2_DrawGlyph(u8g2, 48, 15, '0' + rtcTime.Hours % 10);
+    if (rtcTime.SubSeconds > rtcTime.SecondFraction / 2) {
+        u8g2_DrawBox(u8g2, 58, 7, 2, 2);
+        u8g2_DrawBox(u8g2, 58, 13, 2, 2);
+    }
+    u8g2_DrawGlyph(u8g2, 60, 15, '0' + rtcTime.Minutes / 10);
+    u8g2_DrawGlyph(u8g2, 68, 15, '0' + rtcTime.Minutes % 10);
+    if (rtcTime.SubSeconds > rtcTime.SecondFraction / 2) {
+        u8g2_DrawBox(u8g2, 78, 7, 2, 2);
+        u8g2_DrawBox(u8g2, 78, 13, 2, 2);
+    }
+    u8g2_DrawGlyph(u8g2, 80, 15, '0' + rtcTime.Seconds / 10);
+    u8g2_DrawGlyph(u8g2, 88, 15, '0' + rtcTime.Seconds % 10);
+
+    // Draw signal strength
+    auto strength = Device::get().getSignalStrength();
+    switch (strength) {
+    case Device::SignalStrength::HOTSPOT:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 16, 1, 16, 16, hotspot_bits);
+        break;
+    case Device::SignalStrength::CONNECTING:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_conn_bits);
+        break;
+    case Device::SignalStrength::STRENGTH_0:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig0_bits);
+        break;
+    case Device::SignalStrength::STRENGTH_1:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig1_bits);
+        break;
+    case Device::SignalStrength::STRENGTH_2:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig2_bits);
+        break;
+    case Device::SignalStrength::STRENGTH_3:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig3_bits);
+        break;
+    case Device::SignalStrength::STRENGTH_4:
+        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig4_bits);
+        break;
+    default:
+        break;
+    }
+}
+
+void UiService::drawAccessPointCredentials(u8g2_struct* u8g2)
+{
+    if (m_apSsid.IsEmpty() || m_apPassword.IsEmpty()) {
+        auto networkManager = Device::get().getNetworkManager();
+
+        m_apSsid = networkManager->getAccessPointSsid();
+        m_apPassword = networkManager->getAccessPointPassword();
+    }
+
+    u8g2_DrawFrame(u8g2, 8, 22, OledDriver::WIDTH - 16, 38);
+    u8g2_DrawLine(u8g2, 9, 60, OledDriver::WIDTH - 8, 60);
+    u8g2_DrawLine(u8g2, OledDriver::WIDTH - 8, 23, OledDriver::WIDTH - 8, 59);
+    u8g2_DrawXBM(u8g2, 12, 27, 12, 12, wifi_user_bits);
+    u8g2_DrawXBM(u8g2, 12, 43, 12, 12, wifi_pass_bits);
+
+    u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
+    u8g2_DrawStr(u8g2, 27, 37, m_apSsid.ToCStr());
+    u8g2_DrawStr(u8g2, 27, 53, m_apPassword.ToCStr());
+}
+
 };
+
+// NOLINTEND(cppcoreguidelines-pro-bounds-array-to-pointer-decay)

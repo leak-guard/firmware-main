@@ -1,0 +1,172 @@
+#include "drivers/esp-at.hpp"
+#include <network-mgr.hpp>
+
+#include <device.hpp>
+
+#include <stm32f7xx_hal.h>
+
+namespace lg {
+
+void NetworkManager::networkManagerEntryPoint(void* params)
+{
+    auto instance = reinterpret_cast<NetworkManager*>(params);
+    instance->networkManagerMain();
+}
+
+void NetworkManager::initialize()
+{
+    m_networkManagerTaskHandle = xTaskCreateStatic(
+        &NetworkManager::networkManagerEntryPoint /* Task function */,
+        "Network Mgr" /* Task name */,
+        m_networkManagerTaskStack.size() /* Stack size */,
+        this /* parameters */,
+        3 /* Prority */,
+        m_networkManagerTaskStack.data() /* Task stack address */,
+        &m_networkManagerTaskTcb /* Task control block */
+    );
+
+    generateAccessPointCredentials();
+
+    // TODO: check if the button is pressed
+    m_credentialsReload = 1;
+}
+
+void NetworkManager::reloadCredentials()
+{
+    // The task will periodically check, if this value has changed.
+    // If it did, it will load new credentials from settings
+
+    auto previous = m_credentialsReload;
+    m_credentialsReload = previous + 1;
+}
+
+void NetworkManager::generateAccessPointCredentials()
+{
+    m_apSsid = "LeakGuardConfig";
+
+    std::uint32_t password = HAL_GetUIDw0();
+    password ^= HAL_GetUIDw1();
+    password ^= HAL_GetUIDw2();
+
+    m_apPassword = "LG";
+    for (int i = 0; i < 8; ++i) {
+        std::uint32_t character = password & 0xF;
+        if (character < 10) {
+            m_apPassword += static_cast<char>('0' + character);
+        } else {
+            m_apPassword += static_cast<char>('a' + (character - 10));
+        }
+
+        password >>= 4;
+    }
+}
+
+void NetworkManager::networkManagerMain()
+{
+    static constexpr auto RSSI_CHECK_INTERVAL = 10000; // 10s
+    std::uint32_t prevCredentialsReload = 0;
+    TickType_t prevRssiTicks = 0;
+    auto& esp = Device::get().getEspAtDriver();
+
+    while (true) {
+        bool reconnect = false;
+
+        vTaskDelay(1000);
+
+        if (prevCredentialsReload != m_credentialsReload) {
+            reconnect = loadCredentialsFromSettings();
+            ++prevCredentialsReload;
+        }
+
+        WifiMode targetMode = WifiMode::AP;
+        if (!m_wifiSsid.IsEmpty()) {
+            targetMode = WifiMode::STATION;
+        }
+
+        if (targetMode != m_currentMode) {
+            if (esp.setWifiMode(targetMode) != EspAtDriver::EspResponse::OK) {
+                Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+            }
+            m_currentMode = targetMode;
+
+            reconnect = true;
+        }
+
+        if (reconnect) {
+            if (m_currentMode == WifiMode::AP) {
+                Device::get().setSignalStrength(Device::SignalStrength::HOTSPOT);
+
+                if (esp.setupSoftAp(m_apSsid.ToCStr(), m_apPassword.ToCStr(),
+                        6, EspAtDriver::Encryption::WPA2_PSK)
+                    != EspAtDriver::EspResponse::OK) {
+
+                    Device::get().setSignalStrength(Device::SignalStrength::NO_STRENGTH);
+                    Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+                }
+            } else if (m_currentMode == WifiMode::STATION) {
+                Device::get().setSignalStrength(Device::SignalStrength::CONNECTING);
+
+                esp.setHostname("leakguard");
+
+                if (esp.joinAccessPoint(
+                        m_wifiSsid.ToCStr(), m_wifiPassword.ToCStr())
+                    == EspAtDriver::EspResponse::OK) {
+                    prevRssiTicks = xTaskGetTickCount() + 1000;
+                    Device::get().setSignalStrength(Device::SignalStrength::STRENGTH_0);
+                }
+            }
+        }
+
+        if (m_currentMode == WifiMode::STATION) {
+            switch (esp.getWifiStatus()) {
+            case EspAtDriver::EspWifiStatus::DISCONNECTED:
+            case EspAtDriver::EspWifiStatus::CONNECTING:
+            case EspAtDriver::EspWifiStatus::CONNECTED:
+                Device::get().setSignalStrength(Device::SignalStrength::CONNECTING);
+                break;
+            case EspAtDriver::EspWifiStatus::DHCP_GOT_IP:
+                if (Device::get().getSignalStrength() == Device::SignalStrength::CONNECTING) {
+                    Device::get().setSignalStrength(Device::SignalStrength::STRENGTH_0);
+                }
+                break;
+            }
+        }
+
+        if (esp.getWifiStatus() == EspAtDriver::EspWifiStatus::DHCP_GOT_IP
+            && xTaskGetTickCount() - prevRssiTicks > RSSI_CHECK_INTERVAL) {
+            updateRssi();
+            prevRssiTicks = xTaskGetTickCount();
+        }
+    }
+}
+
+bool NetworkManager::loadCredentialsFromSettings()
+{
+    // m_wifiSsid = "Test";
+    // m_wifiPassword = "testtest";
+
+    return false;
+}
+
+void NetworkManager::updateRssi()
+{
+    auto& esp = Device::get().getEspAtDriver();
+    int rssi = 0;
+    auto signalStrength = Device::SignalStrength::STRENGTH_0;
+
+    if (esp.getRssi(rssi) == EspAtDriver::EspResponse::OK) {
+        if (rssi > -60) {
+            signalStrength = Device::SignalStrength::STRENGTH_4;
+        } else if (rssi > -70) {
+            signalStrength = Device::SignalStrength::STRENGTH_3;
+        } else if (rssi > -80) {
+            signalStrength = Device::SignalStrength::STRENGTH_2;
+        } else if (rssi > -100) {
+            signalStrength = Device::SignalStrength::STRENGTH_1;
+        }
+
+        Device::get().setSignalStrength(signalStrength);
+    }
+}
+
+};

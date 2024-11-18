@@ -28,6 +28,7 @@ void Device::initializeDrivers()
     m_espDriver.initialize();
     m_oledDriver->initialize();
 
+    m_networkManager->initialize();
     m_server->initialize();
     m_uiService->initialize();
 }
