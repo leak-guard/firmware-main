@@ -19,6 +19,7 @@ public:
 
     void initialize();
     void reloadCredentials();
+    void reloadCredentialsOneShot();
 
     [[nodiscard]] const StaticString<32> getAccessPointSsid() const { return m_apSsid; }
     [[nodiscard]] const StaticString<64> getAccessPointPassword() const { return m_apPassword; }
@@ -41,6 +42,7 @@ private:
     std::array<configSTACK_DEPTH_TYPE, 512> m_networkManagerTaskStack {};
 
     volatile std::uint32_t m_credentialsReload {};
+    volatile bool m_oneShotMode { false };
 
     WifiMode m_currentMode { WifiMode::OFF };
     StaticString<32> m_wifiSsid;

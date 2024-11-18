@@ -40,6 +40,12 @@ void NetworkManager::reloadCredentials()
     m_credentialsReload = previous + 1;
 }
 
+void NetworkManager::reloadCredentialsOneShot()
+{
+    m_oneShotMode = true;
+    reloadCredentials();
+}
+
 void NetworkManager::generateAccessPointCredentials()
 {
     m_apSsid = "LeakGuardConfig";
@@ -120,15 +126,21 @@ void NetworkManager::networkManagerMain()
                 if (esp.joinAccessPoint(
                         m_wifiSsid.ToCStr(), m_wifiPassword.ToCStr())
                     == EspAtDriver::EspResponse::OK) {
-                    prevRssiTicks = xTaskGetTickCount() + 1000;
-                    Device::get().setSignalStrength(Device::SignalStrength::STRENGTH_0);
-                }
 
-                if (enableMdns() == EspAtDriver::EspResponse::OK) {
-                    m_mdnsEnabled = true;
-                } else {
-                    m_mdnsEnabled = false;
-                    m_mdnsRetryLeft = 10;
+                    prevRssiTicks = xTaskGetTickCount() + 1000;
+                    m_oneShotMode = false;
+                    Device::get().setSignalStrength(Device::SignalStrength::STRENGTH_0);
+
+                    if (enableMdns() == EspAtDriver::EspResponse::OK) {
+                        m_mdnsEnabled = true;
+                    } else {
+                        m_mdnsEnabled = false;
+                        m_mdnsRetryLeft = 10;
+                    }
+                } else if (m_oneShotMode) {
+                    m_oneShotMode = false;
+                    m_wifiSsid.Clear();
+                    m_wifiPassword.Clear();
                 }
             }
         }
