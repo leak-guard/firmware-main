@@ -1,4 +1,6 @@
 #include "drivers/oled.hpp"
+#include "main.h"
+#include "stm32f7xx_hal_gpio.h"
 #include "u8g2.h"
 #include <ui.hpp>
 
@@ -44,10 +46,36 @@ void UiService::initialize()
 
 void UiService::uiServiceMain()
 {
+    static constexpr auto DISPLAY_REFRESH_INTERVAL_MS = 100;
+
+    std::uint32_t lastDisplayRefresh = 0;
+
     while (true) {
-        refreshDisplay();
+        std::uint32_t currentTicks = xTaskGetTickCount();
+
+        refreshLeds();
+
+        if (currentTicks - lastDisplayRefresh >= DISPLAY_REFRESH_INTERVAL_MS) {
+            refreshDisplay();
+            lastDisplayRefresh = currentTicks;
+        }
+
         vTaskDelay(10);
     }
+}
+
+void UiService::refreshLeds()
+{
+    bool blinkingLit = (xTaskGetTickCount() & 256) > 0;
+    auto wifiStatus = Device::get().getSignalStrength();
+    bool deviceError = Device::get().hasError();
+
+    bool wifiLit = Device::get().hasWifiStationConnection()
+        || (blinkingLit && wifiStatus == Device::SignalStrength::CONNECTING);
+
+    HAL_GPIO_WritePin(LED_WIFI_GPIO_Port, LED_WIFI_Pin, wifiLit ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, deviceError ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_OK_GPIO_Port, LED_OK_Pin, (!deviceError) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void UiService::refreshDisplay()

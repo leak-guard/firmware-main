@@ -1,8 +1,6 @@
-#include "main.h"
-#include "stm32f7xx_hal_gpio.h"
-#include "stm32f7xx_hal_i2c.h"
-#include "u8g2.h"
 #include <drivers/oled.hpp>
+
+#include <device.hpp>
 
 #include <algorithm>
 #include <array>
@@ -52,7 +50,7 @@ static uint8_t u8x8_byte_stm32hal_hw_i2c(u8x8_t* u8x8, uint8_t msg, uint8_t arg_
             display->i2c, I2C_ADDRESS, &buffer[0], buf_idx, 1000u);
 
         if (result != HAL_OK) {
-            // TODO: device error
+            Device::get().setError(Device::ErrorCode::OLED_ERROR);
         }
     } break;
     default:

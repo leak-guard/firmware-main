@@ -15,7 +15,8 @@ public:
     enum class ErrorCode {
         NO_ERROR,
         UNKNOWN_ERROR,
-        WIFI_MODULE_FAILURE
+        WIFI_MODULE_FAILURE,
+        OLED_ERROR
     };
 
     enum class SignalStrength {
@@ -39,6 +40,7 @@ public:
     void setError(ErrorCode code);
 
     SignalStrength getSignalStrength() const { return m_signalStrength; }
+    bool hasWifiStationConnection() const { return m_signalStrength > SignalStrength::STRENGTH_0; }
     void setSignalStrength(SignalStrength strength) { m_signalStrength = strength; }
 
     EspAtDriver& getEspAtDriver() { return m_espDriver; }

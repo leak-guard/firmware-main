@@ -21,6 +21,7 @@ public:
 
 private:
     void uiServiceMain();
+    void refreshLeds();
     void refreshDisplay();
 
     void drawSplashScreen(u8g2_struct* u8g2);
