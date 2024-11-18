@@ -30,6 +30,8 @@ private:
     void networkManagerMain();
     bool loadCredentialsFromSettings();
     void updateRssi();
+    void generateMdnsHostname();
+    EspAtDriver::EspResponse enableMdns();
 
     StaticString<32> m_apSsid;
     StaticString<64> m_apPassword;
@@ -43,6 +45,10 @@ private:
     WifiMode m_currentMode { WifiMode::OFF };
     StaticString<32> m_wifiSsid;
     StaticString<64> m_wifiPassword;
+    StaticString<32> m_mdnsHostname;
+
+    bool m_mdnsEnabled { false };
+    uint32_t m_mdnsRetryLeft { 0 };
 };
 
 };

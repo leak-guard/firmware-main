@@ -348,7 +348,7 @@ auto EspAtDriver::getStationMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out) -
     auto response = sendCommandDirectAndWait("AT+CIPSTAMAC?");
 
     if (response == EspResponse::OK) {
-        m_responseBuffer.Skip(11); // Length of "+CIPSTAMAC:"
+        m_responseBuffer.Skip(12); // Length of "+CIPSTAMAC:""
         m_responseBuffer.Truncate(17); // MAC address length
         out = m_responseBuffer;
     }
@@ -363,7 +363,7 @@ auto EspAtDriver::getApMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out) -> Esp
     auto response = sendCommandDirectAndWait("AT+CIPAPMAC?");
 
     if (response == EspResponse::OK) {
-        m_responseBuffer.Skip(10); // Length of "+CIPAPMAC:"
+        m_responseBuffer.Skip(11); // Length of "+CIPAPMAC:""
         m_responseBuffer.Truncate(17); // MAC address length
         out = m_responseBuffer;
     }

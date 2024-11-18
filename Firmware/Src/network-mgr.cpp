@@ -64,6 +64,8 @@ void NetworkManager::generateAccessPointCredentials()
 void NetworkManager::networkManagerMain()
 {
     static constexpr auto RSSI_CHECK_INTERVAL = 10000; // 10s
+    static constexpr auto TASK_INTERVAL_MS = 1000; // 1s
+
     std::uint32_t prevCredentialsReload = 0;
     TickType_t prevRssiTicks = 0;
     auto& esp = Device::get().getEspAtDriver();
@@ -71,11 +73,15 @@ void NetworkManager::networkManagerMain()
     while (true) {
         bool reconnect = false;
 
-        vTaskDelay(1000);
+        vTaskDelay(TASK_INTERVAL_MS);
 
         if (prevCredentialsReload != m_credentialsReload) {
             reconnect = loadCredentialsFromSettings();
             ++prevCredentialsReload;
+        }
+
+        if (m_mdnsHostname.IsEmpty()) {
+            generateMdnsHostname();
         }
 
         WifiMode targetMode = WifiMode::AP;
@@ -96,6 +102,9 @@ void NetworkManager::networkManagerMain()
             if (m_currentMode == WifiMode::AP) {
                 Device::get().setSignalStrength(Device::SignalStrength::HOTSPOT);
 
+                esp.disableMdns();
+                m_mdnsEnabled = false;
+
                 if (esp.setupSoftAp(m_apSsid.ToCStr(), m_apPassword.ToCStr(),
                         6, EspAtDriver::Encryption::WPA2_PSK)
                     != EspAtDriver::EspResponse::OK) {
@@ -114,10 +123,26 @@ void NetworkManager::networkManagerMain()
                     prevRssiTicks = xTaskGetTickCount() + 1000;
                     Device::get().setSignalStrength(Device::SignalStrength::STRENGTH_0);
                 }
+
+                if (enableMdns() == EspAtDriver::EspResponse::OK) {
+                    m_mdnsEnabled = true;
+                } else {
+                    m_mdnsEnabled = false;
+                    m_mdnsRetryLeft = 10;
+                }
             }
         }
 
         if (m_currentMode == WifiMode::STATION) {
+            if (!m_mdnsEnabled && m_mdnsRetryLeft > 0) {
+                if (enableMdns() == EspAtDriver::EspResponse::OK) {
+                    m_mdnsEnabled = true;
+                    m_mdnsRetryLeft = 0;
+                } else {
+                    --m_mdnsRetryLeft;
+                }
+            }
+
             switch (esp.getWifiStatus()) {
             case EspAtDriver::EspWifiStatus::DISCONNECTED:
             case EspAtDriver::EspWifiStatus::CONNECTING:
@@ -142,9 +167,6 @@ void NetworkManager::networkManagerMain()
 
 bool NetworkManager::loadCredentialsFromSettings()
 {
-    // m_wifiSsid = "Test";
-    // m_wifiPassword = "testtest";
-
     return false;
 }
 
@@ -167,6 +189,31 @@ void NetworkManager::updateRssi()
 
         Device::get().setSignalStrength(signalStrength);
     }
+}
+
+void NetworkManager::generateMdnsHostname()
+{
+    auto& esp = Device::get().getEspAtDriver();
+    StaticString<ESP_MAC_STRING_SIZE> mac;
+
+    if (esp.getStationMacAddress(mac) == EspAtDriver::EspResponse::OK) {
+        for (auto& c : mac) {
+            if (c == ':') {
+                c = '-';
+            }
+        }
+
+        m_mdnsHostname = "leakguard-";
+        m_mdnsHostname += mac;
+    } else {
+        Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+    }
+}
+
+EspAtDriver::EspResponse NetworkManager::enableMdns()
+{
+    auto& esp = Device::get().getEspAtDriver();
+    return esp.enableMdns(m_mdnsHostname.ToCStr(), "_leakguard", 80);
 }
 
 };
