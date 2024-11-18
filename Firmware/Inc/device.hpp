@@ -1,7 +1,9 @@
 #pragma once
+#include "drivers/eeprom.hpp"
 #include "drivers/esp-at.hpp"
 #include "drivers/oled.hpp"
 #include "network-mgr.hpp"
+#include "portmacro.h"
 #include "scoped-res.hpp"
 #include "server.hpp"
 #include "ui.hpp"
@@ -16,7 +18,8 @@ public:
         NO_ERROR,
         UNKNOWN_ERROR,
         WIFI_MODULE_FAILURE,
-        OLED_ERROR
+        OLED_ERROR,
+        EEPROM_ERROR,
     };
 
     enum class SignalStrength {
@@ -43,6 +46,7 @@ public:
     bool hasWifiStationConnection() const { return m_signalStrength > SignalStrength::STRENGTH_0; }
     void setSignalStrength(SignalStrength strength) { m_signalStrength = strength; }
 
+    ScopedResource<EepromDriver> getEepromDriver() { return m_eepromDriver; }
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
 
@@ -50,13 +54,16 @@ public:
     ScopedResource<Server> getHttpServer() { return m_server; }
     ScopedResource<UiService> getUiService() { return m_uiService; }
 
+    BaseType_t notifyEepromFromIsr(bool tx);
+
 private:
     static std::optional<Device> m_instance;
     volatile ErrorCode m_error { ErrorCode::NO_ERROR };
     volatile SignalStrength m_signalStrength { SignalStrength::NO_STRENGTH };
 
     // Drivers
-    EspAtDriver m_espDriver;
+    ProtectedResource<EepromDriver> m_eepromDriver;
+    EspAtDriver m_espDriver; // <- this handles multithreading on its own
     ProtectedResource<OledDriver> m_oledDriver;
 
     // Services
