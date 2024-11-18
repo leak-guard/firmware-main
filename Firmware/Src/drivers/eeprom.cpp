@@ -167,7 +167,7 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
 {
     m_suspendedTask = xTaskGetCurrentTaskHandle();
 
-    xTaskNotifyWait(0, I2C_RX, nullptr, 0);
+    xTaskNotifyWait(0, I2C_TX, nullptr, 0);
 
     auto result = HAL_I2C_Mem_Write_DMA(m_i2c, I2C_ADDRESS, eepromAddress,
         sizeof(std::uint16_t), const_cast<uint8_t*>(in), count);
@@ -176,7 +176,7 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
     }
 
     // Wait for the DMA transaction to finish
-    xTaskNotifyWait(0, I2C_RX, NULL, portMAX_DELAY);
+    xTaskNotifyWait(0, I2C_TX, NULL, portMAX_DELAY);
 
     return true;
 }
