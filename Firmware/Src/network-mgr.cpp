@@ -179,7 +179,18 @@ void NetworkManager::networkManagerMain()
 
 bool NetworkManager::loadCredentialsFromSettings()
 {
-    return false;
+    auto config = Device::get().getConfigService();
+    auto& currentConfig = config->getCurrentConfig();
+
+    bool differentSsid = currentConfig.wifiSsid != m_wifiSsid;
+    bool differentPassword = currentConfig.wifiPassword != m_wifiPassword;
+
+    if (differentSsid || differentPassword) {
+        m_wifiSsid = currentConfig.wifiSsid;
+        m_wifiPassword = currentConfig.wifiPassword;
+    }
+
+    return differentSsid || differentPassword;
 }
 
 void NetworkManager::updateRssi()

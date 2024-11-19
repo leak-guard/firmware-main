@@ -28,7 +28,7 @@ bool EepromDriver::readBytes(uint16_t eepromAddress, uint8_t* out, size_t count)
         return false;
     }
 
-    if (count >= MIN_DMA_TRANSFER_SIZE) {
+    if (count >= MIN_DMA_TRANSFER_SIZE && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
         return readBytesDma(eepromAddress, out, count);
     } else {
         return readBytesDirect(eepromAddress, out, count);
@@ -37,19 +37,13 @@ bool EepromDriver::readBytes(uint16_t eepromAddress, uint8_t* out, size_t count)
 
 bool EepromDriver::writeBytes(uint16_t eepromAddress, const uint8_t* in, size_t count)
 {
-    enableWrites();
     auto result = performWriteBytes(eepromAddress, in, count);
-    disableWrites();
-
     return result;
 }
 
 bool EepromDriver::writePage(uint16_t pageNumber, const uint8_t* in, size_t count)
 {
-    enableWrites();
     auto result = performWritePage(pageNumber, in, count);
-    disableWrites();
-
     return result;
 }
 
@@ -61,8 +55,6 @@ bool EepromDriver::writeMultiplePages(uint16_t startPageNumber, const uint8_t* i
         return false;
     }
 
-    enableWrites();
-
     while (count > 0) {
         size_t toWrite = count;
         if (toWrite > EEPROM_PAGE_SIZE_BYTES) {
@@ -70,7 +62,6 @@ bool EepromDriver::writeMultiplePages(uint16_t startPageNumber, const uint8_t* i
         }
 
         if (!performWritePage(startPageNumber, in, toWrite)) {
-            disableWrites();
             return false;
         }
 
@@ -78,8 +69,6 @@ bool EepromDriver::writeMultiplePages(uint16_t startPageNumber, const uint8_t* i
         in += toWrite;
         count -= toWrite;
     }
-
-    disableWrites();
 
     return true;
 }
@@ -109,9 +98,9 @@ void EepromDriver::enableWrites()
 
 bool EepromDriver::readBytesDirect(uint16_t eepromAddress, uint8_t* out, size_t count)
 {
-    return HAL_I2C_Mem_Read(m_i2c, I2C_ADDRESS, eepromAddress,
-               sizeof(std::uint16_t), out, count, OP_TIMEOUT_MS)
-        == HAL_OK;
+    auto result = HAL_I2C_Mem_Read(m_i2c, I2C_ADDRESS, eepromAddress,
+        sizeof(std::uint16_t), out, count, OP_TIMEOUT_MS);
+    return result == HAL_OK;
 }
 
 bool EepromDriver::readBytesDma(uint16_t eepromAddress, uint8_t* out, size_t count)
@@ -142,7 +131,7 @@ bool EepromDriver::performWriteBytes(uint16_t eepromAddress, const uint8_t* in, 
         return false;
     }
 
-    if (count >= MIN_DMA_TRANSFER_SIZE) {
+    if (count >= MIN_DMA_TRANSFER_SIZE && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
         return writeBytesDma(eepromAddress, in, count);
     } else {
         return writeBytesDirect(eepromAddress, in, count);
@@ -158,9 +147,10 @@ bool EepromDriver::performWritePage(uint16_t pageNumber, const uint8_t* in, size
 
 bool EepromDriver::writeBytesDirect(uint16_t eepromAddress, const uint8_t* in, size_t count)
 {
-    return HAL_I2C_Mem_Write(m_i2c, I2C_ADDRESS, eepromAddress,
-               sizeof(std::uint16_t), const_cast<uint8_t*>(in), count, OP_TIMEOUT_MS)
-        == HAL_OK;
+    auto result = HAL_I2C_Mem_Write(m_i2c, I2C_ADDRESS, eepromAddress,
+        sizeof(std::uint16_t), const_cast<uint8_t*>(in), count, OP_TIMEOUT_MS);
+    waitForOperation();
+    return result == HAL_OK;
 }
 
 bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size_t count)
@@ -178,7 +168,17 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
     // Wait for the DMA transaction to finish
     xTaskNotifyWait(0, I2C_TX, NULL, portMAX_DELAY);
 
+    waitForOperation();
     return true;
+}
+
+void EepromDriver::waitForOperation()
+{
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        vTaskDelay(WRITE_OP_TIME_MS);
+    } else {
+        for (volatile int i = 0; i < 21600 * WRITE_OP_TIME_MS; ++i) { }
+    }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-const-cast)

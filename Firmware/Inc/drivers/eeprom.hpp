@@ -43,14 +43,15 @@ public:
 
     BaseType_t notifyDmaFinishedFromIsr(bool tx);
 
+    void disableWrites();
+    void enableWrites();
+
 private:
     static constexpr auto I2C_TX = (1 << 1);
     static constexpr auto I2C_RX = (1 << 2);
-    static constexpr auto MIN_DMA_TRANSFER_SIZE = 64U;
+    static constexpr auto MIN_DMA_TRANSFER_SIZE = 32U;
     static constexpr auto OP_TIMEOUT_MS = 1000;
-
-    void disableWrites();
-    void enableWrites();
+    static constexpr auto WRITE_OP_TIME_MS = 5;
 
     bool readBytesDirect(uint16_t eepromAddress, uint8_t* out, size_t count);
     bool readBytesDma(uint16_t eepromAddress, uint8_t* out, size_t count);
@@ -58,6 +59,8 @@ private:
     bool performWritePage(uint16_t pageNumber, const uint8_t* in, size_t count);
     bool writeBytesDirect(uint16_t eepromAddress, const uint8_t* in, size_t count);
     bool writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size_t count);
+
+    void waitForOperation();
 
     I2C_HandleTypeDef* m_i2c;
     GPIO_TypeDef* m_wpGpioPort;

@@ -57,12 +57,16 @@ public:
         : m_res(ref)
         , m_mutex(mutex)
     {
-        xSemaphoreTake(m_mutex, portMAX_DELAY);
+        if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+            xSemaphoreTake(m_mutex, portMAX_DELAY);
+        }
     }
 
     ~ScopedResource()
     {
-        xSemaphoreGive(m_mutex);
+        if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+            xSemaphoreGive(m_mutex);
+        }
     }
 
     ScopedResource(const ScopedResource&) = delete;
