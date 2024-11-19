@@ -5,6 +5,8 @@
 #include <array>
 #include <cstdint>
 
+#include <stm32f7xx_ll_i2c.h>
+
 namespace lg {
 
 void EepromDriver::initialize()
@@ -174,11 +176,32 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
 
 void EepromDriver::waitForOperation()
 {
-    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-        vTaskDelay(WRITE_OP_TIME_MS);
-    } else {
-        for (volatile int i = 0; i < 21600 * WRITE_OP_TIME_MS; ++i) { }
+    auto i2c = m_i2c->Instance;
+    LL_I2C_SetSlaveAddr(i2c, I2C_ADDRESS);
+    LL_I2C_SetTransferRequest(i2c, LL_I2C_REQUEST_READ);
+    LL_I2C_SetTransferSize(i2c, 0);
+    LL_I2C_DisableAutoEndMode(i2c);
+
+    while (true) {
+        LL_I2C_GenerateStartCondition(i2c);
+
+        while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c));
+
+        if (LL_I2C_IsActiveFlag_NACK(i2c)) {
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                vTaskDelay(1);
+            }
+
+            LL_I2C_ClearFlag_NACK(i2c);
+        }
+
+        if (LL_I2C_IsActiveFlag_TC(i2c)) {
+            LL_I2C_GenerateStopCondition(i2c);
+            break;
+        }
     }
+
+    LL_I2C_EnableAutoEndMode(i2c);
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-const-cast)
