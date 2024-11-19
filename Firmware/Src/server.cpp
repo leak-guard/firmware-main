@@ -1,3 +1,4 @@
+#include "leakguard/staticstring.hpp"
 #include <server.hpp>
 
 #include <stm32f7xx_hal.h>
@@ -23,6 +24,19 @@ void Server::initialize()
     );
 }
 
+static StaticString<8> ToHex(std::uint32_t in) 
+{
+    static auto alphabet = "0123456789abcdef";
+    StaticString<8> out;
+
+    for (int i = 0; i < 8; ++i) {
+        out += alphabet[in & 0xF];
+        in >>= 4;
+    }
+
+    return out;
+}
+
 void Server::initHttpMain()
 {
     m_server.get("/hello", [&](Request& req, Response& res) {
@@ -40,7 +54,16 @@ void Server::initHttpMain()
         res << "I've got a parameter: " << req.params[1];
     });
 
-    vTaskDelay(5000);
+    m_server.get("/me", [&](Request& req, Response& res) {
+        res.headers.add("Content-Type", "application/json");
+
+        res << R"({"id":")";
+        res << ToHex(HAL_GetUIDw0()).ToCStr() << '-' 
+            << ToHex(HAL_GetUIDw1()).ToCStr() << '-' 
+            << ToHex(HAL_GetUIDw2()).ToCStr();
+        res << R"("})";
+    });
+
     m_server.start();
     vTaskSuspend(nullptr);
 }
