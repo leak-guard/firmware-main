@@ -1,7 +1,3 @@
-#include "drivers/oled.hpp"
-#include "main.h"
-#include "stm32f7xx_hal_gpio.h"
-#include "u8g2.h"
 #include <ui.hpp>
 
 #include <device.hpp>

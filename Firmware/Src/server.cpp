@@ -1,4 +1,3 @@
-#include "leakguard/staticstring.hpp"
 #include <device.hpp>
 #include <server.hpp>
 

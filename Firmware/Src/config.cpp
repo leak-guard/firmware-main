@@ -1,4 +1,3 @@
-#include "drivers/eeprom.hpp"
 #include <config.hpp>
 
 #include <cstdint>

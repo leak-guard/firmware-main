@@ -1,7 +1,8 @@
-#include "device.hpp"
-#include "main.h"
 #include <rtos.hpp>
 
+#include <device.hpp>
+
+#include <gpio.h>
 #include <FreeRTOS.h>
 #include <stm32f7xx_hal.h>
 #include <task.h>

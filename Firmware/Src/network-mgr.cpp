@@ -1,4 +1,3 @@
-#include <drivers/esp-at.hpp>
 #include <network-mgr.hpp>
 
 #include <device.hpp>
