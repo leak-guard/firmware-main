@@ -1,8 +1,9 @@
-#include "drivers/esp-at.hpp"
+#include <drivers/esp-at.hpp>
 #include <network-mgr.hpp>
 
 #include <device.hpp>
 
+#include <gpio.h>
 #include <stm32f7xx_hal.h>
 
 namespace lg {
@@ -27,8 +28,9 @@ void NetworkManager::initialize()
 
     generateAccessPointCredentials();
 
-    // TODO: check if the button is pressed
-    m_credentialsReload = 1;
+    if (!shouldForceApMode()) {
+        m_credentialsReload = 1;
+    }
 }
 
 void NetworkManager::reloadCredentials()
@@ -104,7 +106,9 @@ void NetworkManager::networkManagerMain()
             reconnect = true;
         }
 
-        if (reconnect) {
+        if (reconnect || m_retryConnect) {
+            m_retryConnect = false;
+
             if (m_currentMode == WifiMode::AP) {
                 Device::get().setSignalStrength(Device::SignalStrength::HOTSPOT);
 
@@ -121,7 +125,7 @@ void NetworkManager::networkManagerMain()
             } else if (m_currentMode == WifiMode::STATION) {
                 Device::get().setSignalStrength(Device::SignalStrength::CONNECTING);
 
-                esp.setHostname("leakguard");
+                esp.setHostname(m_mdnsHostname.ToCStr());
 
                 if (esp.joinAccessPoint(
                         m_wifiSsid.ToCStr(), m_wifiPassword.ToCStr())
@@ -141,6 +145,8 @@ void NetworkManager::networkManagerMain()
                     m_oneShotMode = false;
                     m_wifiSsid.Clear();
                     m_wifiPassword.Clear();
+                } else {
+                    m_retryConnect = true;
                 }
             }
         }
@@ -228,6 +234,8 @@ void NetworkManager::generateMdnsHostname()
 
         m_mdnsHostname = "leakguard-";
         m_mdnsHostname += mac;
+
+        m_macAddress = mac;
     } else {
         Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
     }
@@ -237,6 +245,14 @@ EspAtDriver::EspResponse NetworkManager::enableMdns()
 {
     auto& esp = Device::get().getEspAtDriver();
     return esp.enableMdns(m_mdnsHostname.ToCStr(), "_leakguard", 80);
+}
+
+bool NetworkManager::shouldForceApMode()
+{
+    // FIXME: Maybe we should eextract it to another driver?
+    auto pinState = HAL_GPIO_ReadPin(
+        BTN_UNLOCK_GPIO_Port, BTN_UNLOCK_Pin);
+    return pinState == GPIO_PIN_RESET;
 }
 
 };

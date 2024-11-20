@@ -1,4 +1,5 @@
 #include "leakguard/staticstring.hpp"
+#include <device.hpp>
 #include <server.hpp>
 
 #include <stm32f7xx_hal.h>
@@ -57,10 +58,14 @@ void Server::initHttpMain()
     m_server.get("/me", [&](Request& req, Response& res) {
         res.headers.add("Content-Type", "application/json");
 
+        auto networkMgr = Device::get().getNetworkManager();
+
         res << R"({"id":")";
         res << ToHex(HAL_GetUIDw0()).ToCStr() << '-' 
             << ToHex(HAL_GetUIDw1()).ToCStr() << '-' 
             << ToHex(HAL_GetUIDw2()).ToCStr();
+        res << R"(","mac":")";
+        res << networkMgr->getMacAddress().ToCStr();
         res << R"("})";
     });
 

@@ -24,6 +24,8 @@ public:
     [[nodiscard]] const StaticString<32> getAccessPointSsid() const { return m_apSsid; }
     [[nodiscard]] const StaticString<64> getAccessPointPassword() const { return m_apPassword; }
 
+    [[nodiscard]] const StaticString<20> getMacAddress() const { return m_macAddress; }
+
 private:
     using WifiMode = EspAtDriver::EspWifiMode;
 
@@ -33,6 +35,7 @@ private:
     void updateRssi();
     void generateMdnsHostname();
     EspAtDriver::EspResponse enableMdns();
+    bool shouldForceApMode();
 
     StaticString<32> m_apSsid;
     StaticString<64> m_apPassword;
@@ -43,11 +46,13 @@ private:
 
     volatile std::uint32_t m_credentialsReload {};
     volatile bool m_oneShotMode { false };
+    bool m_retryConnect { false };
 
     WifiMode m_currentMode { WifiMode::OFF };
     StaticString<32> m_wifiSsid;
     StaticString<64> m_wifiPassword;
     StaticString<32> m_mdnsHostname;
+    StaticString<20> m_macAddress;
 
     bool m_mdnsEnabled { false };
     uint32_t m_mdnsRetryLeft { 0 };
