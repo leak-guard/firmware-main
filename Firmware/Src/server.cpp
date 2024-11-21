@@ -24,7 +24,7 @@ void Server::initialize()
     );
 }
 
-static StaticString<8> ToHex(std::uint32_t in) 
+static StaticString<8> ToHex(std::uint32_t in)
 {
     static auto alphabet = "0123456789abcdef";
     StaticString<8> out;
@@ -60,8 +60,8 @@ void Server::initHttpMain()
         auto networkMgr = Device::get().getNetworkManager();
 
         res << R"({"id":")";
-        res << ToHex(HAL_GetUIDw0()).ToCStr() << '-' 
-            << ToHex(HAL_GetUIDw1()).ToCStr() << '-' 
+        res << ToHex(HAL_GetUIDw0()).ToCStr() << '-'
+            << ToHex(HAL_GetUIDw1()).ToCStr() << '-'
             << ToHex(HAL_GetUIDw2()).ToCStr();
         res << R"(","mac":")";
         res << networkMgr->getMacAddress().ToCStr();

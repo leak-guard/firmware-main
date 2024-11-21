@@ -34,8 +34,11 @@ private:
     bool loadCredentialsFromSettings();
     void updateRssi();
     void generateMdnsHostname();
+    void configureSntp();
     EspAtDriver::EspResponse enableMdns();
     bool shouldForceApMode();
+    void requestUpdateDeviceTime();
+    void updateDeviceTime();
 
     StaticString<32> m_apSsid;
     StaticString<64> m_apPassword;
@@ -46,7 +49,9 @@ private:
 
     volatile std::uint32_t m_credentialsReload {};
     volatile bool m_oneShotMode { false };
+    volatile bool m_shouldUpdateTime { false };
     bool m_retryConnect { false };
+    bool m_sntpConfigured { false };
 
     WifiMode m_currentMode { WifiMode::OFF };
     StaticString<32> m_wifiSsid;

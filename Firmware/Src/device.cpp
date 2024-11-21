@@ -3,6 +3,7 @@
 
 #include <gpio.h>
 #include <i2c.h>
+#include <rtc.h>
 #include <usart.h>
 
 #include <stm32f7xx_ll_i2c.h>
@@ -42,6 +43,18 @@ void Device::initializeDrivers()
 void Device::setError(ErrorCode code)
 {
     m_error = code;
+}
+
+void Device::updateRtcTime(const UtcTime& newTime)
+{
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+
+    newTime.toHAL(date, time);
+
+    if (HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN) == HAL_OK) {
+        HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN);
+    }
 }
 
 BaseType_t Device::notifyEepromFromIsr(bool tx)

@@ -371,6 +371,59 @@ auto EspAtDriver::getApMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out) -> Esp
     return response;
 }
 
+auto EspAtDriver::configureSntp(int timezone,
+    const char* server1, const char* server2, const char* server3) -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+
+    m_txLineBuffer = "AT+CIPSNTPCFG=1,";
+    m_txLineBuffer += StaticString<10>::Of(timezone);
+    m_txLineBuffer += ',';
+    appendAtString(server1);
+
+    if (server2) {
+        m_txLineBuffer += ',';
+        appendAtString(server2);
+    }
+
+    if (server3) {
+        m_txLineBuffer += ',';
+        appendAtString(server3);
+    }
+
+    m_txLineBuffer += "\r\n";
+
+    return sendCommandBufferAndWait();
+}
+
+auto EspAtDriver::setSntpUpdateInterval(int seconds) -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+
+    m_txLineBuffer = "AT+CIPSNTPINTV=";
+    m_txLineBuffer += StaticString<10>::Of(seconds);
+    m_txLineBuffer += "\r\n";
+
+    return sendCommandBufferAndWait();
+}
+
+auto EspAtDriver::querySntpTime(StaticString<ESP_ASCTIME_STRING_SIZE>& asctime) -> EspResponse
+{
+    auto lock = acquireLock();
+    setResponsePrefix("+CIPSNTPTIME:");
+    auto response = sendCommandDirectAndWait("AT+CIPSNTPTIME?");
+
+    if (response == EspResponse::OK) {
+        m_responseBuffer.Skip(13); // Length of "+CIPSNTPTIME:"
+        m_responseBuffer.Truncate(m_responseBuffer.GetSize() - 2); // Remove \r\n
+        asctime = m_responseBuffer;
+    }
+
+    return response;
+}
+
 void EspAtDriver::initTaskMain()
 {
     {
@@ -687,6 +740,11 @@ void EspAtDriver::parseEspResponse(
         return gotClosed(0);
     }
 
+    if (buffer.StartsWith(STR("+TIME_UPDATED"))) {
+        gotTimeUpdated();
+        return;
+    }
+
     if (!m_responsePrefix.IsEmpty() && buffer.StartsWith(m_responsePrefix)) {
         m_responseBuffer += buffer;
         m_responseBuffer += "\r\n";
@@ -773,6 +831,13 @@ void EspAtDriver::gotData(int linkId, const char* data, std::size_t size)
 
     if (onData) {
         onData(linkId, data, size);
+    }
+}
+
+void EspAtDriver::gotTimeUpdated()
+{
+    if (onSntpTime) {
+        onSntpTime();
     }
 }
 

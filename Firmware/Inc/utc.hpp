@@ -29,9 +29,11 @@ public:
 
     UtcTime() = default;
     UtcTime(std::uint32_t timestamp);
-    static UtcTime FromHAL(const RTC_DateTypeDef& date, const RTC_TimeTypeDef& time);
+    static UtcTime fromHAL(const RTC_DateTypeDef& date, const RTC_TimeTypeDef& time);
+    static UtcTime fromAscTime(const char* ascTime);
 
     [[nodiscard]] std::uint32_t toTimestamp() const;
+    void toHAL(RTC_DateTypeDef& date, RTC_TimeTypeDef& time) const;
 
     void setDay(int newDay)
     {

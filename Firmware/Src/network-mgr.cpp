@@ -1,6 +1,7 @@
 #include <network-mgr.hpp>
 
 #include <device.hpp>
+#include <utc.hpp>
 
 #include <gpio.h>
 #include <stm32f7xx_hal.h>
@@ -77,6 +78,12 @@ void NetworkManager::networkManagerMain()
     TickType_t prevRssiTicks = 0;
     auto& esp = Device::get().getEspAtDriver();
 
+    esp.onSntpTime = [this] { requestUpdateDeviceTime(); };
+
+    while (!esp.isReady()) {
+        vTaskDelay(100);
+    }
+
     while (true) {
         bool reconnect = false;
 
@@ -89,6 +96,11 @@ void NetworkManager::networkManagerMain()
 
         if (m_mdnsHostname.IsEmpty()) {
             generateMdnsHostname();
+        }
+
+        if (m_shouldUpdateTime) {
+            updateDeviceTime();
+            m_shouldUpdateTime = false;
         }
 
         WifiMode targetMode = WifiMode::AP;
@@ -107,6 +119,7 @@ void NetworkManager::networkManagerMain()
 
         if (reconnect || m_retryConnect) {
             m_retryConnect = false;
+            m_sntpConfigured = false;
 
             if (m_currentMode == WifiMode::AP) {
                 Device::get().setSignalStrength(Device::SignalStrength::HOTSPOT);
@@ -140,6 +153,8 @@ void NetworkManager::networkManagerMain()
                         m_mdnsEnabled = false;
                         m_mdnsRetryLeft = 10;
                     }
+
+                    configureSntp();
                 } else if (m_oneShotMode) {
                     m_oneShotMode = false;
                     m_wifiSsid.Clear();
@@ -240,6 +255,20 @@ void NetworkManager::generateMdnsHostname()
     }
 }
 
+void NetworkManager::configureSntp()
+{
+    static constexpr auto SNTP_UPDATE_INTERVAL_SECONDS = 5 * 60 * 60; // 5 hours
+    auto& esp = Device::get().getEspAtDriver();
+
+    if (esp.configureSntp(0, "0.pool.ntp.org", "time.google.com") == EspAtDriver::EspResponse::OK) {
+        esp.setSntpUpdateInterval(SNTP_UPDATE_INTERVAL_SECONDS);
+
+        m_sntpConfigured = true;
+    } else {
+        Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+    }
+}
+
 EspAtDriver::EspResponse NetworkManager::enableMdns()
 {
     auto& esp = Device::get().getEspAtDriver();
@@ -249,9 +278,30 @@ EspAtDriver::EspResponse NetworkManager::enableMdns()
 bool NetworkManager::shouldForceApMode()
 {
     // FIXME: Maybe we should eextract it to another driver?
+
     auto pinState = HAL_GPIO_ReadPin(
         BTN_UNLOCK_GPIO_Port, BTN_UNLOCK_Pin);
     return pinState == GPIO_PIN_RESET;
+}
+
+void NetworkManager::requestUpdateDeviceTime()
+{
+    // We shouldn't do this from ESP worker task
+
+    m_shouldUpdateTime = true;
+}
+
+void NetworkManager::updateDeviceTime()
+{
+    auto& esp = Device::get().getEspAtDriver();
+    StaticString<ESP_ASCTIME_STRING_SIZE> asctime;
+
+    if (esp.querySntpTime(asctime) == EspAtDriver::EspResponse::OK) {
+        UtcTime time = UtcTime::fromAscTime(asctime.ToCStr());
+        Device::get().updateRtcTime(time);
+    } else {
+        Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+    }
 }
 
 };

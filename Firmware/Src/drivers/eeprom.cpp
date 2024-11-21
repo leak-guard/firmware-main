@@ -185,7 +185,8 @@ void EepromDriver::waitForOperation()
     while (true) {
         LL_I2C_GenerateStartCondition(i2c);
 
-        while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c));
+        while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c))
+            ;
 
         if (LL_I2C_IsActiveFlag_NACK(i2c)) {
             if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {

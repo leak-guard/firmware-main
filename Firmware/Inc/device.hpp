@@ -4,10 +4,10 @@
 #include "drivers/esp-at.hpp"
 #include "drivers/oled.hpp"
 #include "network-mgr.hpp"
-#include "portmacro.h"
 #include "scoped-res.hpp"
 #include "server.hpp"
 #include "ui.hpp"
+#include "utc.hpp"
 
 #include <optional>
 
@@ -42,6 +42,8 @@ public:
     bool hasError() const { return m_error != ErrorCode::NO_ERROR; }
     ErrorCode getError() const { return m_error; }
     void setError(ErrorCode code);
+
+    void updateRtcTime(const UtcTime& newTime);
 
     SignalStrength getSignalStrength() const { return m_signalStrength; }
     bool hasWifiStationConnection() const { return m_signalStrength > SignalStrength::STRENGTH_0; }

@@ -2,8 +2,8 @@
 
 #include <device.hpp>
 
-#include <gpio.h>
 #include <FreeRTOS.h>
+#include <gpio.h>
 #include <stm32f7xx_hal.h>
 #include <task.h>
 

@@ -17,6 +17,7 @@
 #define ESP_AP_LIST_SIZE 20
 #define ESP_IP_STRING_SIZE 16
 #define ESP_MAC_STRING_SIZE 20
+#define ESP_ASCTIME_STRING_SIZE 32
 #define ESP_RX_DONE (1 << 0)
 #define ESP_READY (1 << 1)
 
@@ -112,6 +113,7 @@ public:
     EspResponse closeConnection(int linkId);
     EspResponse closeAllConnections();
     EspResponse sendData(int linkId, const char* data, std::size_t size);
+
     EspResponse setWifiMode(EspWifiMode mode);
     EspResponse joinAccessPoint(const char* ssid, const char* password);
     EspResponse listAccessPoints(StaticVector<AccessPoint, ESP_AP_LIST_SIZE>& out);
@@ -119,18 +121,27 @@ public:
     EspResponse setupSoftAp(const char* ssid,
         const char* password, int channel, Encryption encryption);
     EspResponse queryStationIp(StaticString<ESP_IP_STRING_SIZE>& out);
+
     EspResponse disableMdns();
     EspResponse enableMdns(const char* hostname, const char* service, std::uint16_t port);
+
     EspResponse setHostname(const char* hostname);
+
     EspResponse getRssi(int& rssiOut);
     EspResponse getStationMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out);
     EspResponse getApMacAddress(StaticString<ESP_MAC_STRING_SIZE>& out);
+
+    EspResponse configureSntp(int timezone,
+        const char* server1, const char* server2 = nullptr, const char* server3 = nullptr);
+    EspResponse setSntpUpdateInterval(int seconds);
+    EspResponse querySntpTime(StaticString<ESP_ASCTIME_STRING_SIZE>& asctime);
 
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
     std::function<void(int)> onConnected;
     std::function<void(int)> onClosed;
     std::function<void(int, const char*, std::size_t)> onData;
+    std::function<void()> onSntpTime;
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -179,6 +190,7 @@ private:
     void gotConnect(int linkId);
     void gotClosed(int linkId);
     void gotData(int linkId, const char* data, std::size_t size);
+    void gotTimeUpdated();
     void closeIdleConnections();
 
     void parseInputData(const StaticString<ESP_LINE_BUFFER_SIZE>& buffer);
