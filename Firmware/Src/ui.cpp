@@ -105,36 +105,31 @@ void UiService::drawSplashScreen(u8g2_struct* u8g2)
 
 void UiService::drawStatusBar(u8g2_struct* u8g2)
 {
-    RTC_DateTypeDef rtcDate {};
-    RTC_TimeTypeDef rtcTime {};
-
-    HAL_RTC_GetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
-
-    // TODO: draw local time, not RTC/UTC time
+    std::uint32_t subseconds = 0, secondFraction = 0;
+    auto localTime = Device::get().getLocalTime(&subseconds, &secondFraction);
 
     u8g2_ClearBuffer(u8g2);
     u8g2_SetFont(u8g2, u8g2_font_crox1cb_mn);
-    u8g2_DrawGlyph(u8g2, 0, 14, '0' + rtcDate.Date / 10);
-    u8g2_DrawGlyph(u8g2, 8, 14, '0' + rtcDate.Date % 10);
+    u8g2_DrawGlyph(u8g2, 0, 14, '0' + localTime.getDay() / 10);
+    u8g2_DrawGlyph(u8g2, 8, 14, '0' + localTime.getDay() % 10);
     u8g2_DrawBox(u8g2, 18, 12, 2, 2);
-    u8g2_DrawGlyph(u8g2, 20, 14, '0' + rtcDate.Month / 10);
-    u8g2_DrawGlyph(u8g2, 28, 14, '0' + rtcDate.Month % 10);
+    u8g2_DrawGlyph(u8g2, 20, 14, '0' + localTime.getMonth() / 10);
+    u8g2_DrawGlyph(u8g2, 28, 14, '0' + localTime.getMonth() % 10);
 
-    u8g2_DrawGlyph(u8g2, 40, 14, '0' + rtcTime.Hours / 10);
-    u8g2_DrawGlyph(u8g2, 48, 14, '0' + rtcTime.Hours % 10);
-    if (rtcTime.SubSeconds > rtcTime.SecondFraction / 2) {
+    u8g2_DrawGlyph(u8g2, 40, 14, '0' + localTime.getHour() / 10);
+    u8g2_DrawGlyph(u8g2, 48, 14, '0' + localTime.getHour() % 10);
+    if (subseconds > secondFraction / 2) {
         u8g2_DrawBox(u8g2, 58, 6, 2, 2);
         u8g2_DrawBox(u8g2, 58, 12, 2, 2);
     }
-    u8g2_DrawGlyph(u8g2, 60, 14, '0' + rtcTime.Minutes / 10);
-    u8g2_DrawGlyph(u8g2, 68, 14, '0' + rtcTime.Minutes % 10);
-    if (rtcTime.SubSeconds > rtcTime.SecondFraction / 2) {
+    u8g2_DrawGlyph(u8g2, 60, 14, '0' + localTime.getMinute() / 10);
+    u8g2_DrawGlyph(u8g2, 68, 14, '0' + localTime.getMinute() % 10);
+    if (subseconds > secondFraction / 2) {
         u8g2_DrawBox(u8g2, 78, 6, 2, 2);
         u8g2_DrawBox(u8g2, 78, 12, 2, 2);
     }
-    u8g2_DrawGlyph(u8g2, 80, 14, '0' + rtcTime.Seconds / 10);
-    u8g2_DrawGlyph(u8g2, 88, 14, '0' + rtcTime.Seconds % 10);
+    u8g2_DrawGlyph(u8g2, 80, 14, '0' + localTime.getSecond() / 10);
+    u8g2_DrawGlyph(u8g2, 88, 14, '0' + localTime.getSecond() % 10);
 
     // Draw signal strength
     auto strength = Device::get().getSignalStrength();

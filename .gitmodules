@@ -16,3 +16,6 @@
 [submodule "External/u8g2"]
 	path = External/u8g2
 	url = https://github.com/olikraus/u8g2
+[submodule "External/utz"]
+	path = External/utz
+	url = https://github.com/leak-guard/utz

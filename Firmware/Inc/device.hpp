@@ -9,7 +9,11 @@
 #include "ui.hpp"
 #include "utc.hpp"
 
+#include <memory>
 #include <optional>
+
+// Forward declarations
+struct uzone_t;
 
 namespace lg {
 
@@ -39,11 +43,15 @@ public:
     Device();
 
     void initializeDrivers();
+
     bool hasError() const { return m_error != ErrorCode::NO_ERROR; }
     ErrorCode getError() const { return m_error; }
     void setError(ErrorCode code);
 
     void updateRtcTime(const UtcTime& newTime);
+    bool setLocalTimezone(const char* timezoneName);
+    UtcTime getLocalTime(
+        std::uint32_t* subseconds = nullptr, std::uint32_t* secondFraction = nullptr);
 
     SignalStrength getSignalStrength() const { return m_signalStrength; }
     bool hasWifiStationConnection() const { return m_signalStrength > SignalStrength::STRENGTH_0; }
@@ -64,6 +72,12 @@ private:
     static std::optional<Device> m_instance;
     volatile ErrorCode m_error { ErrorCode::NO_ERROR };
     volatile SignalStrength m_signalStrength { SignalStrength::NO_STRENGTH };
+
+    // We want to avoid dynamic memory at all, but we also don't want to
+    // mess in code by using a not-C++-ready header <utz.h>
+    // So there is a single exception in the entire codebase:
+
+    std::unique_ptr<uzone_t> m_currentZone;
 
     // Drivers
     ProtectedResource<EepromDriver> m_eepromDriver;
