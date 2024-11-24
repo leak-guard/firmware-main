@@ -40,6 +40,7 @@ void Device::initializeDrivers()
     m_espDriver.initialize();
     m_oledDriver->initialize();
 
+    m_cronService->initialize();
     m_configService->initialize();
     m_networkManager->initialize();
     m_server->initialize();
@@ -128,15 +129,6 @@ UtcTime Device::getLocalTime(
     return UtcTime { timestamp + timestampOffset };
 }
 
-BaseType_t Device::notifyEepromFromIsr(bool tx)
-{
-    if (hi2c2.State == HAL_I2C_STATE_READY) {
-        return m_eepromDriver->notifyDmaFinishedFromIsr(tx);
-    }
-
-    return 0;
-}
-
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-do-while,cppcoreguidelines-pro-type-cstyle-cast)
@@ -149,8 +141,11 @@ extern "C" void I2C2_EV_IRQHandler(void)
     HAL_I2C_EV_IRQHandler(&hi2c2);
 
     if (tc) {
-        auto higherPriorityWoken = lg::Device::get().notifyEepromFromIsr(tx);
-        portYIELD_FROM_ISR(higherPriorityWoken);
+        if (hi2c2.State == HAL_I2C_STATE_READY) {
+            auto higherPriorityWoken
+                = lg::Device::get().getEepromDriver()->notifyDmaFinishedFromIsr(tx);
+            portYIELD_FROM_ISR(higherPriorityWoken);
+        }
     }
 }
 

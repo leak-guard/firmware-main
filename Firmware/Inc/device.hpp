@@ -1,5 +1,6 @@
 #pragma once
 #include "config.hpp"
+#include "cron.hpp"
 #include "drivers/eeprom.hpp"
 #include "drivers/esp-at.hpp"
 #include "drivers/oled.hpp"
@@ -61,12 +62,11 @@ public:
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
 
+    ScopedResource<CronService> getCronService() { return m_cronService; }
     ScopedResource<ConfigService> getConfigService() { return m_configService; }
     ScopedResource<NetworkManager> getNetworkManager() { return m_networkManager; }
     ScopedResource<Server> getHttpServer() { return m_server; }
     ScopedResource<UiService> getUiService() { return m_uiService; }
-
-    BaseType_t notifyEepromFromIsr(bool tx);
 
 private:
     static std::optional<Device> m_instance;
@@ -85,6 +85,7 @@ private:
     ProtectedResource<OledDriver> m_oledDriver;
 
     // Services
+    ProtectedResource<CronService> m_cronService;
     ProtectedResource<ConfigService> m_configService;
     ProtectedResource<NetworkManager> m_networkManager;
     ProtectedResource<Server> m_server;

@@ -1,5 +1,6 @@
 #pragma once
 #include <FreeRTOS.h>
+#include <portmacro.h>
 #include <semphr.h>
 
 #include <stm32f7xx_hal.h>
@@ -58,14 +59,18 @@ public:
         , m_mutex(mutex)
     {
         if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-            xSemaphoreTake(m_mutex, portMAX_DELAY);
+            if (!xPortIsInsideInterrupt()) {
+                m_taken = xSemaphoreTake(m_mutex, portMAX_DELAY);
+            }
         }
     }
 
     ~ScopedResource()
     {
-        if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-            xSemaphoreGive(m_mutex);
+        if (m_taken == pdTRUE && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+            if (!xPortIsInsideInterrupt()) {
+                xSemaphoreGive(m_mutex);
+            }
         }
     }
 
@@ -82,6 +87,7 @@ public:
 private:
     T& m_res;
     SemaphoreHandle_t m_mutex {};
+    BaseType_t m_taken {};
 };
 
 };

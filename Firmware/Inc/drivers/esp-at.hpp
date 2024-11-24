@@ -95,7 +95,7 @@ public:
         MQTT_WSS_PROVIDE_CLIENT,
         MQTT_WSS_VERIFY_SERVER_AND_PROVIDE_CLIENT,
     };
-    
+
     enum class MqttQoS {
         AT_MOST_ONCE,
         AT_LEAST_ONCE,
@@ -156,7 +156,7 @@ public:
     EspResponse setSntpUpdateInterval(int seconds);
     EspResponse querySntpTime(StaticString<ESP_ASCTIME_STRING_SIZE>& asctime);
 
-    EspResponse configureMqttUser(MqttScheme scheme, const char* clientId, 
+    EspResponse configureMqttUser(MqttScheme scheme, const char* clientId,
         const char* username, const char* password, const char* path);
     EspResponse mqttConnectToBroker(const char* host, std::uint16_t port = MQTT_PORT);
     EspResponse mqttPublish(const char* topic, const char* data, MqttQoS qos, bool retain);
