@@ -424,6 +424,75 @@ auto EspAtDriver::querySntpTime(StaticString<ESP_ASCTIME_STRING_SIZE>& asctime) 
     return response;
 }
 
+auto EspAtDriver::configureMqttUser(MqttScheme scheme, const char* clientId,
+    const char* username, const char* password, const char* path) -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+
+    m_txLineBuffer = "AT+MQTTUSERCFG=0,";
+    m_txLineBuffer += StaticString<2>::Of(static_cast<int>(scheme));
+    m_txLineBuffer += ',';
+    appendAtString(clientId);
+    m_txLineBuffer += ',';
+    appendAtString(username);
+    m_txLineBuffer += ',';
+    appendAtString(password);
+    m_txLineBuffer += ",0,0,";
+    appendAtString(path);
+    m_txLineBuffer += "\r\n";
+
+    return sendCommandBufferAndWait(MQTT_TIMEOUT_MS);
+}
+
+auto EspAtDriver::mqttConnectToBroker(
+    const char* host, std::uint16_t port) -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+
+    m_txLineBuffer = "AT+MQTTCONN=0,";
+    appendAtString(host);
+    m_txLineBuffer += ',';
+    m_txLineBuffer += StaticString<5>::Of(port);
+    m_txLineBuffer += ",1\r\n";
+
+    return sendCommandBufferAndWait(portMAX_DELAY);
+}
+
+auto EspAtDriver::mqttPublish(
+    const char* topic, const char* data, MqttQoS qos, bool retain) -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+
+    m_txLineBuffer = "AT+MQTTPUB=0,";
+    appendAtString(topic);
+    m_txLineBuffer += ',';
+    appendAtString(data);
+    m_txLineBuffer += ',';
+    m_txLineBuffer += StaticString<1>::Of(static_cast<int>(qos));
+    m_txLineBuffer += ",";
+    m_txLineBuffer += retain ? '1' : '0';
+    m_txLineBuffer += "\r\n";
+
+    return sendCommandBufferAndWait(MQTT_TIMEOUT_MS);
+}
+
+auto EspAtDriver::mqttSubscribe(const char* topic, MqttQoS qos) -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+
+    m_txLineBuffer = "AT+MQTTSUB=0,";
+    appendAtString(topic);
+    m_txLineBuffer += ',';
+    m_txLineBuffer += StaticString<1>::Of(static_cast<int>(qos));
+    m_txLineBuffer += "\r\n";
+
+    return sendCommandBufferAndWait(MQTT_TIMEOUT_MS);
+}
+
 void EspAtDriver::initTaskMain()
 {
     {
