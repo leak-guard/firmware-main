@@ -26,7 +26,7 @@ void EepromDriver::initialize()
 
 bool EepromDriver::readBytes(uint16_t eepromAddress, uint8_t* out, size_t count)
 {
-    if (eepromAddress + count >= EEPROM_SIZE_BYTES) {
+    if (eepromAddress + count > EEPROM_SIZE_BYTES) {
         return false;
     }
 
@@ -125,11 +125,11 @@ bool EepromDriver::readBytesDma(uint16_t eepromAddress, uint8_t* out, size_t cou
 
 bool EepromDriver::performWriteBytes(uint16_t eepromAddress, const uint8_t* in, size_t count)
 {
-    if (eepromAddress + count >= EEPROM_SIZE_BYTES) {
+    if (eepromAddress + count > EEPROM_SIZE_BYTES) {
         return false;
     }
 
-    if (count >= EEPROM_PAGE_SIZE_BYTES) {
+    if (count > EEPROM_PAGE_SIZE_BYTES) {
         return false;
     }
 
@@ -185,8 +185,12 @@ void EepromDriver::waitForOperation()
     while (true) {
         LL_I2C_GenerateStartCondition(i2c);
 
-        while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c))
+        while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c) && !LL_I2C_IsActiveFlag_ARLO(i2c))
             ;
+
+        if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
+            LL_I2C_ClearFlag_ARLO(i2c);
+        }
 
         if (LL_I2C_IsActiveFlag_NACK(i2c)) {
             if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {

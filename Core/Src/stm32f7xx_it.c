@@ -167,6 +167,20 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles Flash global interrupt.
+  */
+void FLASH_IRQHandler(void)
+{
+  /* USER CODE BEGIN FLASH_IRQn 0 */
+
+  /* USER CODE END FLASH_IRQn 0 */
+  HAL_FLASH_IRQHandler();
+  /* USER CODE BEGIN FLASH_IRQn 1 */
+
+  /* USER CODE END FLASH_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream2 global interrupt.
   */
 void DMA1_Stream2_IRQHandler(void)
@@ -192,6 +206,20 @@ void DMA1_Stream6_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
 
   /* USER CODE END DMA1_Stream6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
+void EXTI9_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(FLOW_BTN_IN_Pin);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+  /* USER CODE END EXTI9_5_IRQn 1 */
 }
 
 /**

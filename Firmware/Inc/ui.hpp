@@ -2,6 +2,7 @@
 #include <leakguard/staticstring.hpp>
 
 #include <array>
+#include <cstdint>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -26,7 +27,9 @@ private:
 
     void drawSplashScreen(u8g2_struct* u8g2);
     void drawStatusBar(u8g2_struct* u8g2);
+    void drawBox(u8g2_struct* u8g2);
     void drawAccessPointCredentials(u8g2_struct* u8g2);
+    void drawFlow(u8g2_struct* u8g2);
 
     TaskHandle_t m_uiServiceTaskHandle {};
     StaticTask_t m_uiServiceTaskTcb {};
@@ -35,6 +38,9 @@ private:
     bool m_splashScreenHidden { false };
     StaticString<32> m_apSsid;
     StaticString<64> m_apPassword;
+
+    std::uint32_t m_waterAnimAccumulator {};
+    std::uint32_t m_waterAnimFrame {};
 };
 
 };

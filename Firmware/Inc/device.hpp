@@ -4,6 +4,7 @@
 #include "drivers/eeprom.hpp"
 #include "drivers/esp-at.hpp"
 #include "drivers/oled.hpp"
+#include "flow-meter.hpp"
 #include "network-mgr.hpp"
 #include "scoped-res.hpp"
 #include "server.hpp"
@@ -67,6 +68,7 @@ public:
     ScopedResource<NetworkManager> getNetworkManager() { return m_networkManager; }
     ScopedResource<Server> getHttpServer() { return m_server; }
     ScopedResource<UiService> getUiService() { return m_uiService; }
+    ScopedResource<FlowMeterService> getFlowMeterService() { return m_flowMeterService; }
 
 private:
     static std::optional<Device> m_instance;
@@ -90,6 +92,7 @@ private:
     ProtectedResource<NetworkManager> m_networkManager;
     ProtectedResource<Server> m_server;
     ProtectedResource<UiService> m_uiService;
+    ProtectedResource<FlowMeterService> m_flowMeterService;
 };
 
 };

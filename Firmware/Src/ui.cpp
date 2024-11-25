@@ -1,11 +1,18 @@
+#include "u8g2.h"
 #include <ui.hpp>
 
 #include <device.hpp>
 #include <leakguard/staticstring.hpp>
 
 // Bitmaps
+#define static static const
 #include <bitmaps/hotspot.xbm>
+#include <bitmaps/l_per_min.xbm>
 #include <bitmaps/splashscreen.xbm>
+#include <bitmaps/wateranim_0.xbm>
+#include <bitmaps/wateranim_1.xbm>
+#include <bitmaps/wateranim_2.xbm>
+#include <bitmaps/wateranim_3.xbm>
 #include <bitmaps/wifi_conn.xbm>
 #include <bitmaps/wifi_pass.xbm>
 #include <bitmaps/wifi_sig0.xbm>
@@ -14,6 +21,7 @@
 #include <bitmaps/wifi_sig3.xbm>
 #include <bitmaps/wifi_sig4.xbm>
 #include <bitmaps/wifi_user.xbm>
+#undef static
 
 #include <rtc.h>
 
@@ -42,7 +50,7 @@ void UiService::initialize()
 
 void UiService::uiServiceMain()
 {
-    static constexpr auto DISPLAY_REFRESH_INTERVAL_MS = 100;
+    static constexpr auto DISPLAY_REFRESH_INTERVAL_MS = 50;
 
     std::uint32_t lastDisplayRefresh = 0;
 
@@ -92,6 +100,8 @@ void UiService::refreshDisplay()
 
         if (Device::get().getSignalStrength() == Device::SignalStrength::HOTSPOT) {
             drawAccessPointCredentials(u8g2);
+        } else {
+            drawFlow(u8g2);
         }
     }
 
@@ -160,6 +170,15 @@ void UiService::drawStatusBar(u8g2_struct* u8g2)
     }
 }
 
+void UiService::drawBox(u8g2_struct* u8g2)
+{
+    u8g2_DrawFrame(u8g2, 8, 22, OledDriver::WIDTH - 16, 38);
+    u8g2_DrawLine(u8g2, 9, 60, OledDriver::WIDTH - 8, 60);
+    u8g2_DrawLine(u8g2, OledDriver::WIDTH - 8, 23, OledDriver::WIDTH - 8, 59);
+    u8g2_DrawXBM(u8g2, 12, 27, 12, 12, wifi_user_bits);
+    u8g2_DrawXBM(u8g2, 12, 43, 12, 12, wifi_pass_bits);
+}
+
 void UiService::drawAccessPointCredentials(u8g2_struct* u8g2)
 {
     if (m_apSsid.IsEmpty() || m_apPassword.IsEmpty()) {
@@ -169,15 +188,54 @@ void UiService::drawAccessPointCredentials(u8g2_struct* u8g2)
         m_apPassword = networkManager->getAccessPointPassword();
     }
 
-    u8g2_DrawFrame(u8g2, 8, 22, OledDriver::WIDTH - 16, 38);
-    u8g2_DrawLine(u8g2, 9, 60, OledDriver::WIDTH - 8, 60);
-    u8g2_DrawLine(u8g2, OledDriver::WIDTH - 8, 23, OledDriver::WIDTH - 8, 59);
-    u8g2_DrawXBM(u8g2, 12, 27, 12, 12, wifi_user_bits);
-    u8g2_DrawXBM(u8g2, 12, 43, 12, 12, wifi_pass_bits);
+    drawBox(u8g2);
 
     u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
     u8g2_DrawStr(u8g2, 27, 37, m_apSsid.ToCStr());
     u8g2_DrawStr(u8g2, 27, 53, m_apPassword.ToCStr());
+}
+
+void UiService::drawFlow(u8g2_struct* u8g2)
+{
+    static constexpr auto ML_FOR_FRAME = 10 * 1200; // 10 ml and 1200 calls in a minute (Every 50ms)
+    static const std::array<const unsigned char*, 4> ANIM_FRAMES = {
+        wateranim_0_bits, wateranim_1_bits, wateranim_2_bits, wateranim_3_bits
+    };
+
+    StaticString<8> flowText;
+    std::uint32_t flowMl = Device::get().getFlowMeterService()->getCurrentFlowInMlPerMinute();
+
+    m_waterAnimAccumulator += flowMl;
+    while (m_waterAnimAccumulator > ML_FOR_FRAME) {
+        m_waterAnimAccumulator -= ML_FOR_FRAME;
+        ++m_waterAnimFrame;
+
+        if (m_waterAnimFrame > 3) {
+            m_waterAnimFrame = 0;
+        }
+    }
+
+    if (flowMl > 99999) {
+        flowMl = 99999;
+    }
+
+    std::uint32_t integral = flowMl / 1000;
+    std::uint32_t fraction = (flowMl - integral * 1000) / 10;
+
+    flowText = StaticString<8>::Of(integral);
+    flowText += '.';
+
+    auto fractionText = StaticString<2>::Of(fraction);
+    if (fractionText.GetSize() == 1) {
+        flowText += '0';
+    }
+    flowText += fractionText;
+
+    ::u8g2_DrawXBM(u8g2, 2, 30, wateranim_0_width, wateranim_0_height, ANIM_FRAMES.at(m_waterAnimFrame));
+    ::u8g2_SetFont(u8g2, u8g2_font_profont29_mn);
+    auto textWidth = ::u8g2_GetStrWidth(u8g2, flowText.ToCStr());
+    ::u8g2_DrawStr(u8g2, 106 - textWidth, 49, flowText.ToCStr());
+    ::u8g2_DrawXBM(u8g2, 107, 30, l_per_min_width, l_per_min_height, l_per_min_bits);
 }
 
 };

@@ -75,6 +75,7 @@ void Error_Handler(void);
 #define FLOW_IMP_IN_GPIO_Port GPIOE
 #define FLOW_BTN_IN_Pin GPIO_PIN_8
 #define FLOW_BTN_IN_GPIO_Port GPIOE
+#define FLOW_BTN_IN_EXTI_IRQn EXTI9_5_IRQn
 #define LORA_DIO0_Pin GPIO_PIN_12
 #define LORA_DIO0_GPIO_Port GPIOB
 #define LORA_DIO0_EXTI_IRQn EXTI15_10_IRQn

@@ -16,6 +16,7 @@ public:
         std::uint32_t configVersion;
         StaticString<32> wifiSsid;
         StaticString<64> wifiPassword;
+        uint32_t impulsesPerLiter;
 
         uint32_t unused; // <- this will config size to be word-aligned
     };

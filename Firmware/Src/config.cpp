@@ -25,6 +25,7 @@ void ConfigService::resetToDefault()
     m_currentConfig.configVersion = CURRENT_CONFIG_VERSION;
     m_currentConfig.wifiSsid.Clear();
     m_currentConfig.wifiPassword.Clear();
+    m_currentConfig.impulsesPerLiter = 500;
     m_currentConfig.unused = 0;
 
     m_currentConfig.crc = calculateCrc(m_currentConfig);

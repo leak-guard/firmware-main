@@ -4,6 +4,7 @@
 #include <gpio.h>
 #include <i2c.h>
 #include <rtc.h>
+#include <tim.h>
 #include <usart.h>
 
 #include <stm32f7xx_ll_i2c.h>
@@ -21,6 +22,7 @@ Device::Device()
     , m_eepromDriver(&hi2c2, EEPROM_WP_GPIO_Port, EEPROM_WP_Pin)
     , m_espDriver(&huart1)
     , m_oledDriver(&hi2c1)
+    , m_flowMeterService(&htim1)
 {
     setLocalTimezone("Berlin");
 }
@@ -45,6 +47,7 @@ void Device::initializeDrivers()
     m_networkManager->initialize();
     m_server->initialize();
     m_uiService->initialize();
+    m_flowMeterService->initialize();
 }
 
 void Device::setError(ErrorCode code)

@@ -57,7 +57,8 @@ void CronService::setupAlarmInterrupt()
     alarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
 
     HAL_RTC_SetAlarm_IT(&hrtc, &alarm, FORMAT_BCD);
-    HAL_RTCEx_SetSmoothCalib(&hrtc, RTC_SMOOTHCALIB_PERIOD_32SEC, RTC_SMOOTHCALIB_PLUSPULSES_SET, 100);
+    HAL_RTCEx_SetSmoothCalib(&hrtc,
+        RTC_SMOOTHCALIB_PERIOD_32SEC, RTC_SMOOTHCALIB_PLUSPULSES_SET, 220);
     HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
 }
 
