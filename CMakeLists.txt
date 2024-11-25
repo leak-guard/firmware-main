@@ -42,6 +42,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(-D_DEBUG)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
+# Configure HTTP server
+add_compile_definitions(-DHTTP_BUFFER_SIZE=2048)
+
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=\"${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map\"")
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)

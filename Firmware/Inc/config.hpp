@@ -1,6 +1,7 @@
 #pragma once
 #include <leakguard/staticstring.hpp>
 
+#include <array>
 #include <cstdint>
 
 namespace lg {
@@ -9,6 +10,7 @@ class ConfigService {
 public:
     static constexpr auto CONFIG_PAGES = 64;
     static constexpr auto CURRENT_CONFIG_VERSION = 1;
+    static constexpr auto BLOCKADE_ENABLED_FLAG = 1U << 31;
 
     // Only memcopyable types can be used here
     struct ConfigV1 {
@@ -21,6 +23,7 @@ public:
         uint32_t impulsesPerLiter {};
         bool valveTypeNC {};
         StaticString<32> adminPassword;
+        std::array<std::uint32_t, 7> weeklySchedule {};
 
         uint32_t unused {}; // <- this will force config size to be word-aligned
 

@@ -11,8 +11,6 @@
 #include <stm32f7xx_hal.h>
 #include <task.h>
 
-#include <cmsis_compiler.h>
-
 namespace lg {
 
 static constexpr uint8_t I2C_ADDRESS = 0x78;
@@ -65,7 +63,7 @@ static uint8_t psoc_gpio_and_delay_cb(u8x8_t* u8x8, uint8_t msg, uint8_t arg_int
     case U8X8_MSG_GPIO_AND_DELAY_INIT:
         break;
     case U8X8_MSG_DELAY_NANO: {
-        for (volatile uint32_t i = 1; i <= arg_int * 10; i = i + 1)
+        for (uint32_t i = 1; i <= arg_int * 10; i = i + 1)
             ;
         break;
     }

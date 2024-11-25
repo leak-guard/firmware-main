@@ -19,7 +19,7 @@ void ConfigService::initialize()
 {
     if (readConfigFromEeprom()) {
         copyCurrentToStored();
-        //} else {
+    } else {
         auto storedPtr = reinterpret_cast<std::uint32_t*>(&m_storedConfig);
         for (int i = 0; i < sizeof(m_storedConfig) / sizeof(std::uint32_t); ++i) {
             *(storedPtr++) = 0xFFFFFFFFU;
@@ -35,6 +35,7 @@ void ConfigService::resetToDefault()
     m_currentConfig.impulsesPerLiter = 500;
     m_currentConfig.valveTypeNC = false;
     m_currentConfig.adminPassword = "admin1";
+    m_currentConfig.weeklySchedule.fill(0);
 
     m_currentConfig.unused = 0;
 

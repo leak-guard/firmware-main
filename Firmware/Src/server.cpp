@@ -1,3 +1,4 @@
+#include "config.hpp"
 #include "leakguard/microhttp.hpp"
 #include <device.hpp>
 #include <initializer_list>
@@ -20,6 +21,7 @@ enum class JsonType {
     JSON_SIGNED,
     JSON_UNSIGNED,
     JSON_STRING,
+    JSON_OBJECT,
 };
 
 struct JsonRule {
@@ -63,6 +65,10 @@ bool validateJson(const ArduinoJson::StaticJsonDocument<N>& doc,
                 return false;
             }
             break;
+        case JsonType::JSON_OBJECT:
+            if (!variant.is<ArduinoJson::JsonObjectConst>()) {
+                return false;
+            }
         }
     }
 
@@ -104,7 +110,12 @@ static StaticString<8> ToHex(std::uint32_t in)
 void Server::initHttpMain()
 {
     addGeneralRoutes();
+    addBlockRoutes();
     addConfigRoutes();
+    addWaterRoutes();
+
+    // For testing EEPROM driver DMA:
+    // Device::get().getConfigService()->commit();
 
     m_server.start();
     vTaskSuspend(nullptr);
@@ -143,6 +154,125 @@ void Server::addGeneralRoutes()
     });
 }
 
+void Server::addBlockRoutes()
+{
+    static constexpr std::array<const char*, 7> weekdays = {
+        "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
+    };
+
+    m_server.get("/water-block/schedule", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        std::array<std::uint32_t, 7> weeklySchedule {};
+        {
+            auto configService = Device::get().getConfigService();
+            auto& currentConfig = configService->getCurrentConfig();
+
+            weeklySchedule = currentConfig.weeklySchedule;
+        }
+
+        addJsonHeader(res);
+        res << '{';
+
+        for (size_t i = 0; i < weekdays.size(); ++i) {
+            std::uint32_t value = weeklySchedule.at(i);
+            bool enabled = (value & ConfigService::BLOCKADE_ENABLED_FLAG) != 0;
+
+            res << '"';
+            res << weekdays.at(i);
+            res << R"(":{"enabled":)";
+            res << (enabled ? "true" : "false");
+            res << R"(,"hours":[)";
+
+            for (size_t hour = 0; hour < 24; ++hour) {
+                bool hourBlocked = (value & (1 << hour)) != 0;
+                res << (hourBlocked ? "true" : "false");
+
+                if (hour < 23) {
+                    res << ',';
+                }
+            }
+            res << "]}";
+            if (i < weekdays.size() - 1) {
+                res << ',';
+            }
+        }
+
+        res << '}';
+    });
+
+    m_server.put("/water-block/schedule", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        ArduinoJson::StaticJsonDocument<4096> doc;
+        auto error = ArduinoJson::deserializeJson(
+            doc, req.body.begin(), req.body.GetSize());
+
+        if (error != ArduinoJson::DeserializationError::Ok) {
+            return respondBadRequest(res);
+        }
+
+        if (!validateJson(doc,
+                {
+                    JsonRule { weekdays[0], JsonType::JSON_OBJECT },
+                    JsonRule { weekdays[1], JsonType::JSON_OBJECT },
+                    JsonRule { weekdays[2], JsonType::JSON_OBJECT },
+                    JsonRule { weekdays[3], JsonType::JSON_OBJECT },
+                    JsonRule { weekdays[4], JsonType::JSON_OBJECT },
+                    JsonRule { weekdays[5], JsonType::JSON_OBJECT },
+                    JsonRule { weekdays[6], JsonType::JSON_OBJECT },
+                })) {
+            return respondBadRequest(res);
+        }
+
+        // Additional validation is required
+        for (auto weekday : weekdays) {
+            auto dayObject = doc[weekday];
+            if (!dayObject.containsKey("enabled") || !dayObject.containsKey("hours")) {
+                return respondBadRequest(res);
+            }
+
+            if (!dayObject["enabled"].is<bool>() || !dayObject["hours"].is<ArduinoJson::JsonArray>()) {
+                return respondBadRequest(res);
+            }
+
+            if (dayObject["hours"].as<ArduinoJson::JsonArray>().size() != 24) {
+                return respondBadRequest(res);
+            }
+        }
+
+        std::array<std::uint32_t, 7> weeklySchedule {};
+        for (size_t i = 0; i < weekdays.size(); ++i) {
+            auto dayObject = doc[weekdays.at(i)];
+            std::uint32_t value = 0;
+            if (dayObject["enabled"].as<bool>()) {
+                value |= ConfigService::BLOCKADE_ENABLED_FLAG;
+            }
+
+            for (size_t hour = 0; hour < 24; ++hour) {
+                if (dayObject["hours"][hour].as<bool>()) {
+                    value |= (1 << hour);
+                }
+            }
+
+            weeklySchedule.at(i) = value;
+        }
+
+        {
+            auto configService = Device::get().getConfigService();
+            auto& currentConfig = configService->getCurrentConfig();
+            currentConfig.weeklySchedule = weeklySchedule;
+            configService->commit();
+        }
+
+        res.status(HttpStatusCode::NoContent_204);
+    });
+}
+
 void Server::addConfigRoutes()
 {
     m_server.get("/config", [this](Request& req, Response& res) {
@@ -176,12 +306,13 @@ void Server::addConfigRoutes()
             return respondBadRequest(res);
         }
 
-        if (!validateJson(doc, {
-                                   JsonRule { "ssid", JsonType::JSON_STRING },
-                                   JsonRule { "passphrase", JsonType::JSON_STRING },
-                                   JsonRule { "flow_meter_impulses", JsonType::JSON_UNSIGNED },
-                                   JsonRule { "valve_type", JsonType::JSON_STRING },
-                               })) {
+        if (!validateJson(doc,
+                {
+                    JsonRule { "ssid", JsonType::JSON_STRING },
+                    JsonRule { "passphrase", JsonType::JSON_STRING },
+                    JsonRule { "flow_meter_impulses", JsonType::JSON_UNSIGNED },
+                    JsonRule { "valve_type", JsonType::JSON_STRING },
+                })) {
             return respondBadRequest(res);
         }
 
@@ -228,11 +359,35 @@ void Server::addConfigRoutes()
     });
 }
 
+void Server::addWaterRoutes()
+{
+    m_server.get("/water-usage", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        std::uint32_t flowMl = 0, totalMl = 0;
+        {
+            auto flowMeter = Device::get().getFlowMeterService();
+            flowMl = flowMeter->getCurrentFlowInMlPerMinute();
+            totalMl = flowMeter->getTotalVolumeInMl();
+        }
+
+        addJsonHeader(res);
+        res << R"({"flow_rate":)";
+        res << flowMl;
+        res << R"(,"total_volume":)";
+        res << totalMl;
+        res << R"(})";
+    });
+}
+
 bool Server::checkAuthorization(Request& req, Response& res)
 {
     int authorizationTag = req.headers.find(StaticString<32>("authorization"));
     if (authorizationTag < 0) {
         addJsonHeader(res);
+        addAuthenticateHeader(res);
         res.status(HttpStatusCode::Unauthorized_401);
         res << R"({"status":"unauthorized"})";
         return false;
@@ -241,6 +396,7 @@ bool Server::checkAuthorization(Request& req, Response& res)
     auto& authorizationValue = req.headers[authorizationTag].second;
     if (!authorizationValue.StartsWith(STR("Basic "))) {
         addJsonHeader(res);
+        addAuthenticateHeader(res);
         res.status(HttpStatusCode::Unauthorized_401);
         res << R"({"status":"unauthorized"})";
         return false;
@@ -257,6 +413,7 @@ bool Server::checkAuthorization(Request& req, Response& res)
 
     if (!ok) {
         addJsonHeader(res);
+        addAuthenticateHeader(res);
         res.status(HttpStatusCode::Unauthorized_401);
         res << R"({"status":"unauthorized"})";
     }
@@ -267,6 +424,11 @@ bool Server::checkAuthorization(Request& req, Response& res)
 void Server::addJsonHeader(Response& res)
 {
     res.headers.add("Content-Type", "application/json");
+}
+
+void Server::addAuthenticateHeader(Response& res)
+{
+    res.headers.add("WWW-Authenticate", R"(Basic realm="LeakGuard")");
 }
 
 void Server::respondBadRequest(Response& res)

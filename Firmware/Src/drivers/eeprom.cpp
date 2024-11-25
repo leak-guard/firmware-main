@@ -170,6 +170,7 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
     auto result = HAL_I2C_Mem_Write_DMA(m_i2c, I2C_ADDRESS, eepromAddress,
         sizeof(std::uint16_t), const_cast<uint8_t*>(in), count);
     if (result != HAL_OK) {
+        Device::get().setError(Device::ErrorCode::EEPROM_ERROR);
         return false;
     }
 
@@ -182,8 +183,12 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
 void EepromDriver::waitForOperation()
 {
     auto i2c = m_i2c->Instance;
+
+    while (LL_I2C_IsActiveFlag_BUSY(i2c))
+        ;
+
     LL_I2C_SetSlaveAddr(i2c, I2C_ADDRESS);
-    LL_I2C_SetTransferRequest(i2c, LL_I2C_REQUEST_READ);
+    LL_I2C_SetTransferRequest(i2c, LL_I2C_REQUEST_WRITE);
     LL_I2C_SetTransferSize(i2c, 0);
     LL_I2C_EnableAutoEndMode(i2c);
 

@@ -56,7 +56,7 @@ private:
 
     std::array<StaticTask_t, MAX_CONNECTIONS> m_workerTaskTcb {};
     std::array<TaskHandle_t, MAX_CONNECTIONS> m_workerTaskHandle {};
-    std::array<std::array<configSTACK_DEPTH_TYPE, 1024>, MAX_CONNECTIONS> m_workerTaskStack {};
+    std::array<std::array<configSTACK_DEPTH_TYPE, 2048>, MAX_CONNECTIONS> m_workerTaskStack {};
     std::array<std::array<std::uint8_t, BUFFER_SIZE>, MAX_CONNECTIONS> m_workerTaskBufferBlock {};
     std::array<StaticMessageBuffer_t, MAX_CONNECTIONS> m_workerTaskMessageBuffer {};
     std::array<MessageBufferHandle_t, MAX_CONNECTIONS> m_workerTaskMessageBufferHandle {};
