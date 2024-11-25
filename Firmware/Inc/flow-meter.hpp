@@ -13,8 +13,10 @@ class FlowMeterService {
 public:
     static void flowMeterServiceEntryPoint(void* params);
 
-    FlowMeterService(TIM_HandleTypeDef* counterTimer)
+    FlowMeterService(TIM_HandleTypeDef* counterTimer, GPIO_TypeDef* impPort, std::uint16_t impPin)
         : m_timer(counterTimer)
+        , m_impPort(impPort)
+        , m_impPin(impPin)
     {
     }
 
@@ -22,6 +24,7 @@ public:
     void impulseButtonPressed();
 
     std::uint32_t getCurrentFlowInMlPerMinute() const { return m_currentFlowMlPerMinute; }
+    std::uint32_t getTotalVolumeInMl() const { return m_totalMilliliters; }
 
 private:
     static constexpr auto HISTORY_LENGTH = 10;
@@ -37,6 +40,8 @@ private:
     void enableCounter();
 
     TIM_HandleTypeDef* m_timer;
+    GPIO_TypeDef* m_impPort;
+    std::uint16_t m_impPin;
 
     TaskHandle_t m_flowMeterServiceTaskHandle {};
     StaticTask_t m_flowMeterServiceTaskTcb {};
@@ -47,8 +52,10 @@ private:
     std::uint16_t m_prevImpulses {};
 
     std::uint32_t m_totalImpulseDelta {};
+    std::uint32_t m_milliliterImpulseRemainder {};
 
     volatile std::uint32_t m_currentFlowMlPerMinute {};
+    volatile std::uint32_t m_totalMilliliters {};
 };
 
 };

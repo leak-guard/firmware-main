@@ -22,7 +22,7 @@ Device::Device()
     , m_eepromDriver(&hi2c2, EEPROM_WP_GPIO_Port, EEPROM_WP_Pin)
     , m_espDriver(&huart1)
     , m_oledDriver(&hi2c1)
-    , m_flowMeterService(&htim1)
+    , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
 {
     setLocalTimezone("Berlin");
 }

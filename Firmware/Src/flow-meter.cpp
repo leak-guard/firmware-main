@@ -46,30 +46,46 @@ void FlowMeterService::flowMeterServiceMain()
 
 void FlowMeterService::updateFlow()
 {
-    static constexpr auto DEFAULT_IMPULSES_PER_LITER = 500.f;
+    static constexpr auto DEFAULT_IMPULSES_PER_LITER = 500;
     static constexpr auto MS_PER_MINUTE = 60000.f;
 
     std::uint16_t currentImpulses = LL_TIM_GetCounter(m_timer->Instance);
     std::uint32_t currentTicks = xTaskGetTickCount();
+    std::uint32_t impulsesPerLiterInt = 0;
     float impulsesPerLiter = 0;
 
     {
         auto configService = Device::get().getConfigService();
-        impulsesPerLiter = static_cast<float>(
-            configService->getCurrentConfig().impulsesPerLiter);
+        impulsesPerLiterInt = configService->getCurrentConfig().impulsesPerLiter;
+        impulsesPerLiter = static_cast<float>(impulsesPerLiterInt);
     }
 
     if (impulsesPerLiter == 0) {
         impulsesPerLiter = DEFAULT_IMPULSES_PER_LITER;
+        impulsesPerLiterInt = DEFAULT_IMPULSES_PER_LITER;
     }
 
     std::uint16_t impulseDelta = currentImpulses - m_prevImpulses;
     m_prevImpulses = currentImpulses;
 
+    if (impulseDelta) {
+        HAL_GPIO_WritePin(m_impPort, m_impPin, GPIO_PIN_SET);
+    }
+
     DataPoint currentDataPoint = { currentTicks, impulseDelta };
     m_history.PushOne(currentDataPoint);
 
     m_totalImpulseDelta += impulseDelta;
+
+    std::uint32_t impulsesIncrement = m_milliliterImpulseRemainder + impulseDelta * 1000;
+    std::uint32_t wholeMilliliters = impulsesIncrement / impulsesPerLiterInt;
+    std::uint32_t currentMilliliters = m_totalMilliliters;
+    currentMilliliters += wholeMilliliters;
+
+    m_milliliterImpulseRemainder
+        = impulsesIncrement - wholeMilliliters * impulsesPerLiterInt;
+
+    m_totalMilliliters = currentMilliliters;
 
     if (m_history.GetCurrentSize() == m_history.GetCapacity()) {
         DataPoint lastDataPoint {};
@@ -89,6 +105,9 @@ void FlowMeterService::updateFlow()
     } else {
         m_currentFlowMlPerMinute = 0;
     }
+
+    vTaskDelay(1);
+    HAL_GPIO_WritePin(m_impPort, m_impPin, GPIO_PIN_RESET);
 }
 
 void FlowMeterService::enableCounter()
