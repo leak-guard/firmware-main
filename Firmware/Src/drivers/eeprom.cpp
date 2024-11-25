@@ -217,5 +217,4 @@ void EepromDriver::waitForOperation()
 
 // NOLINTEND(cppcoreguidelines-pro-type-const-cast)
 
-
 };

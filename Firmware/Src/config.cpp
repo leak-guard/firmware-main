@@ -19,7 +19,7 @@ void ConfigService::initialize()
 {
     if (readConfigFromEeprom()) {
         copyCurrentToStored();
-    //} else {
+        //} else {
         auto storedPtr = reinterpret_cast<std::uint32_t*>(&m_storedConfig);
         for (int i = 0; i < sizeof(m_storedConfig) / sizeof(std::uint32_t); ++i) {
             *(storedPtr++) = 0xFFFFFFFFU;

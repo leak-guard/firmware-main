@@ -11,7 +11,7 @@
 #include <initializer_list>
 
 extern "C" {
-    #include <base64.h>
+#include <base64.h>
 }
 
 namespace lg {
@@ -30,11 +30,10 @@ struct JsonRule {
 };
 
 template <size_t N>
-bool validateJson(const ArduinoJson::StaticJsonDocument<N>& doc, 
+bool validateJson(const ArduinoJson::StaticJsonDocument<N>& doc,
     std::initializer_list<JsonRule> rules)
 {
-    for (auto& rule : rules)
-    {
+    for (auto& rule : rules) {
         if (!doc.containsKey(rule.fieldName)) {
             if (rule.optional) {
                 continue;
@@ -153,7 +152,7 @@ void Server::addConfigRoutes()
 
         auto configService = Device::get().getConfigService();
         auto& currentConfig = configService->getCurrentConfig();
-        
+
         ArduinoJson::StaticJsonDocument<512> doc;
         doc["ssid"] = currentConfig.wifiSsid.ToCStr();
         doc["passphrase"] = currentConfig.wifiPassword.ToCStr();
@@ -172,17 +171,17 @@ void Server::addConfigRoutes()
         ArduinoJson::StaticJsonDocument<512> doc;
         auto error = ArduinoJson::deserializeJson(
             doc, req.body.begin(), req.body.GetSize());
-        
+
         if (error != ArduinoJson::DeserializationError::Ok) {
             return respondBadRequest(res);
         }
 
         if (!validateJson(doc, {
-            JsonRule { "ssid", JsonType::JSON_STRING },
-            JsonRule { "passphrase", JsonType::JSON_STRING },
-            JsonRule { "flow_meter_impulses", JsonType::JSON_UNSIGNED },
-            JsonRule { "valve_type", JsonType::JSON_STRING },
-        })) {
+                                   JsonRule { "ssid", JsonType::JSON_STRING },
+                                   JsonRule { "passphrase", JsonType::JSON_STRING },
+                                   JsonRule { "flow_meter_impulses", JsonType::JSON_UNSIGNED },
+                                   JsonRule { "valve_type", JsonType::JSON_STRING },
+                               })) {
             return respondBadRequest(res);
         }
 
@@ -209,14 +208,12 @@ void Server::addConfigRoutes()
         ArduinoJson::StaticJsonDocument<128> doc;
         auto error = ArduinoJson::deserializeJson(
             doc, req.body.begin(), req.body.GetSize());
-        
+
         if (error != ArduinoJson::DeserializationError::Ok) {
             return respondBadRequest(res);
         }
 
-        if (!validateJson(doc, {
-            JsonRule { "password", JsonType::JSON_STRING }
-        })) {
+        if (!validateJson(doc, { JsonRule { "password", JsonType::JSON_STRING } })) {
             return respondBadRequest(res);
         }
 
@@ -253,7 +250,7 @@ bool Server::checkAuthorization(Request& req, Response& res)
     expectedCredentials += Device::get().getConfigService()->getCurrentConfig().adminPassword;
 
     std::array<char, 128> out {};
-    base64_encode(reinterpret_cast<const unsigned char*>(expectedCredentials.begin()), 
+    base64_encode(reinterpret_cast<const unsigned char*>(expectedCredentials.begin()),
         expectedCredentials.GetSize(), out.data());
 
     bool ok = strcmp(authorizationValue.ToCStr() + 6, out.data()) == 0;

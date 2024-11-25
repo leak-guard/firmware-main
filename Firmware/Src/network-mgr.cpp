@@ -94,7 +94,7 @@ void NetworkManager::networkManagerMain()
             if (!reconnect) {
                 m_oneShotMode = false;
             }
-            
+
             ++prevCredentialsReload;
         }
 
