@@ -1,6 +1,7 @@
 #include <config.hpp>
 
 #include <cstdint>
+#include <cstring>
 #include <device.hpp>
 
 #include <crc.h>
@@ -16,8 +17,14 @@ static_assert(
 
 void ConfigService::initialize()
 {
-    readConfigFromEeprom();
-    copyCurrentToStored();
+    if (readConfigFromEeprom()) {
+        copyCurrentToStored();
+    //} else {
+        auto storedPtr = reinterpret_cast<std::uint32_t*>(&m_storedConfig);
+        for (int i = 0; i < sizeof(m_storedConfig) / sizeof(std::uint32_t); ++i) {
+            *(storedPtr++) = 0xFFFFFFFFU;
+        }
+    }
 }
 
 void ConfigService::resetToDefault()
@@ -26,6 +33,9 @@ void ConfigService::resetToDefault()
     m_currentConfig.wifiSsid.Clear();
     m_currentConfig.wifiPassword.Clear();
     m_currentConfig.impulsesPerLiter = 500;
+    m_currentConfig.valveTypeNC = false;
+    m_currentConfig.adminPassword = "admin1";
+
     m_currentConfig.unused = 0;
 
     m_currentConfig.crc = calculateCrc(m_currentConfig);
@@ -115,14 +125,15 @@ bool ConfigService::commit()
     return true;
 }
 
-void ConfigService::readConfigFromEeprom()
+bool ConfigService::readConfigFromEeprom()
 {
     auto eeprom = Device::get().getEepromDriver();
 
     if (!eeprom->readObject(
             FIRST_CONFIG_PAGE * EepromDriver::EEPROM_PAGE_SIZE_BYTES, m_currentConfig)) {
 
-        return resetToDefault();
+        resetToDefault();
+        return false;
     }
 
     auto correctCrc = calculateCrc(m_currentConfig);
@@ -130,22 +141,28 @@ void ConfigService::readConfigFromEeprom()
         if (!eeprom->readObject(
                 SECOND_CONFIG_PAGE * EepromDriver::EEPROM_PAGE_SIZE_BYTES, m_currentConfig)) {
 
-            return resetToDefault();
+            resetToDefault();
+            return false;
         }
 
         correctCrc = calculateCrc(m_currentConfig);
         if (m_currentConfig.crc != correctCrc) {
-            return resetToDefault();
+            resetToDefault();
+            return false;
         }
     }
 
     if (!isConfigSupported(m_currentConfig.configVersion)) {
-        return resetToDefault();
+        resetToDefault();
+        return false;
     }
 
     if (m_currentConfig.configVersion != CURRENT_CONFIG_VERSION) {
         migrate();
+        return false;
     }
+
+    return true;
 }
 
 bool ConfigService::isConfigSupported(std::uint32_t version)

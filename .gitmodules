@@ -19,3 +19,9 @@
 [submodule "External/utz"]
 	path = External/utz
 	url = https://github.com/leak-guard/utz
+[submodule "External/base64"]
+	path = External/base64
+	url = https://github.com/zhicheng/base64
+[submodule "External/ArduinoJson"]
+	path = External/ArduinoJson
+	url = https://github.com/bblanchon/ArduinoJson

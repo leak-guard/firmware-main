@@ -1,3 +1,5 @@
+add_subdirectory(ArduinoJson)
+include(base64.cmake)
 add_subdirectory(FreeRTOS-Kernel)
 add_subdirectory(microhttp)
 add_subdirectory(stm32)

@@ -149,15 +149,21 @@ bool EepromDriver::performWritePage(uint16_t pageNumber, const uint8_t* in, size
 
 bool EepromDriver::writeBytesDirect(uint16_t eepromAddress, const uint8_t* in, size_t count)
 {
+    waitForOperation();
     auto result = HAL_I2C_Mem_Write(m_i2c, I2C_ADDRESS, eepromAddress,
         sizeof(std::uint16_t), const_cast<uint8_t*>(in), count, OP_TIMEOUT_MS);
-    waitForOperation();
+
+    if (result != HAL_OK) {
+        Device::get().setError(Device::ErrorCode::EEPROM_ERROR);
+    }
+
     return result == HAL_OK;
 }
 
 bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size_t count)
 {
     m_suspendedTask = xTaskGetCurrentTaskHandle();
+    waitForOperation();
 
     xTaskNotifyWait(0, I2C_TX, nullptr, 0);
 
@@ -170,7 +176,6 @@ bool EepromDriver::writeBytesDma(uint16_t eepromAddress, const uint8_t* in, size
     // Wait for the DMA transaction to finish
     xTaskNotifyWait(0, I2C_TX, NULL, portMAX_DELAY);
 
-    waitForOperation();
     return true;
 }
 
@@ -180,35 +185,37 @@ void EepromDriver::waitForOperation()
     LL_I2C_SetSlaveAddr(i2c, I2C_ADDRESS);
     LL_I2C_SetTransferRequest(i2c, LL_I2C_REQUEST_READ);
     LL_I2C_SetTransferSize(i2c, 0);
-    LL_I2C_DisableAutoEndMode(i2c);
+    LL_I2C_EnableAutoEndMode(i2c);
 
     while (true) {
-        LL_I2C_GenerateStartCondition(i2c);
-
-        while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c) && !LL_I2C_IsActiveFlag_ARLO(i2c))
+        while (LL_I2C_IsActiveFlag_BUSY(i2c))
             ;
 
-        if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
-            LL_I2C_ClearFlag_ARLO(i2c);
-        }
+        LL_I2C_ClearFlag_NACK(i2c);
+        LL_I2C_ClearFlag_STOP(i2c);
+        LL_I2C_GenerateStartCondition(i2c);
+
+        while (!LL_I2C_IsActiveFlag_STOP(i2c) && !LL_I2C_IsActiveFlag_NACK(i2c))
+            ;
 
         if (LL_I2C_IsActiveFlag_NACK(i2c)) {
+            LL_I2C_ClearFlag_NACK(i2c);
+
             if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
                 vTaskDelay(1);
             }
 
-            LL_I2C_ClearFlag_NACK(i2c);
+            continue;
         }
 
-        if (LL_I2C_IsActiveFlag_TC(i2c)) {
-            LL_I2C_GenerateStopCondition(i2c);
+        if (LL_I2C_IsActiveFlag_STOP(i2c)) {
+            LL_I2C_ClearFlag_STOP(i2c);
             break;
         }
     }
-
-    LL_I2C_EnableAutoEndMode(i2c);
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-const-cast)
+
 
 };

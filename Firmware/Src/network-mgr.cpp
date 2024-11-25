@@ -91,6 +91,10 @@ void NetworkManager::networkManagerMain()
 
         if (prevCredentialsReload != m_credentialsReload) {
             reconnect = loadCredentialsFromSettings();
+            if (!reconnect) {
+                m_oneShotMode = false;
+            }
+            
             ++prevCredentialsReload;
         }
 

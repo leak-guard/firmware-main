@@ -24,6 +24,12 @@ public:
 
 private:
     void initHttpMain();
+    void addGeneralRoutes();
+    void addConfigRoutes();
+
+    bool checkAuthorization(Request& req, Response& res);
+    void addJsonHeader(Response& res);
+    void respondBadRequest(Response& res);
 
     Server_t m_server;
 

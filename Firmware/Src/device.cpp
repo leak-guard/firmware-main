@@ -138,12 +138,12 @@ UtcTime Device::getLocalTime(
 
 extern "C" void I2C2_EV_IRQHandler(void)
 {
-    bool tc = LL_I2C_IsActiveFlag_TC(hi2c2.Instance);
+    bool complete = LL_I2C_IsActiveFlag_STOP(hi2c2.Instance);
     bool tx = HAL_I2C_GetState(&hi2c2) == HAL_I2C_STATE_BUSY_TX;
 
     HAL_I2C_EV_IRQHandler(&hi2c2);
 
-    if (tc) {
+    if (complete) {
         if (hi2c2.State == HAL_I2C_STATE_READY) {
             auto higherPriorityWoken
                 = lg::Device::get().getEepromDriver()->notifyDmaFinishedFromIsr(tx);
