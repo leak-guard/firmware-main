@@ -50,7 +50,7 @@ void EspSocketImpl::bind(std::uint16_t port)
     m_esp->onConnected = [&](int linkId) {
         if (linkId >= 0 && linkId < MAX_CONNECTIONS) {
             SocketMessage msg = { SocketMessage::MessageType::CONNECTED };
-            xMessageBufferSend(m_workerTaskMessageBufferHandle.at(linkId), &msg, sizeof(SocketMessage), portMAX_DELAY);
+            xMessageBufferSend(m_workerTaskMessageBufferHandle.at(linkId), &msg, sizeof(SocketMessage::Header), portMAX_DELAY);
         } else {
             Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
         }
@@ -59,7 +59,7 @@ void EspSocketImpl::bind(std::uint16_t port)
     m_esp->onClosed = [&](int linkId) {
         if (linkId >= 0 && linkId < MAX_CONNECTIONS) {
             SocketMessage msg = { SocketMessage::MessageType::DISCONNECTED };
-            xMessageBufferSend(m_workerTaskMessageBufferHandle.at(linkId), &msg, sizeof(SocketMessage), portMAX_DELAY);
+            xMessageBufferSend(m_workerTaskMessageBufferHandle.at(linkId), &msg, sizeof(SocketMessage::Header), portMAX_DELAY);
         } else {
             Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
         }
@@ -68,14 +68,14 @@ void EspSocketImpl::bind(std::uint16_t port)
     m_esp->onData = [&](int linkId, const char* data, std::size_t size) {
         if (linkId >= 0 && linkId < MAX_CONNECTIONS && size <= EspAtDriver::MAX_DATA_CHUNK_SIZE) {
             // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
-            std::array<uint8_t, sizeof(SocketMessage) + EspAtDriver::MAX_DATA_CHUNK_SIZE> buffer;
+            std::array<uint8_t, sizeof(SocketMessage::Header) + EspAtDriver::MAX_DATA_CHUNK_SIZE> buffer;
             // NOLINTEND(cppcoreguidelines-pro-type-member-init)
 
             auto msg = reinterpret_cast<SocketMessage*>(buffer.data());
-            msg->messageType = SocketMessage::MessageType::DATA;
+            msg->header.messageType = SocketMessage::MessageType::DATA;
             std::memcpy(msg->data.data(), data, size);
 
-            std::size_t msgSize = sizeof(SocketMessage) + size;
+            std::size_t msgSize = sizeof(SocketMessage::Header) + size;
             xMessageBufferSend(m_workerTaskMessageBufferHandle.at(linkId), buffer.data(), msgSize, portMAX_DELAY);
         } else {
             Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
@@ -123,7 +123,7 @@ void EspSocketImpl::workerMain(int workerId)
     std::array<char, BUFFER_SIZE - sizeof(std::uint32_t)> rxBuffer;
     // NOLINTEND(cppcoreguidelines-pro-type-member-init)
 
-    SocketMessage* msg = reinterpret_cast<SocketMessage*>(rxBuffer.data());
+    auto msg = reinterpret_cast<SocketMessage*>(rxBuffer.data());
 
     while (true) {
         auto rxSize = xMessageBufferReceive(
@@ -132,9 +132,9 @@ void EspSocketImpl::workerMain(int workerId)
             rxBuffer.size(),
             portMAX_DELAY);
 
-        std::size_t dataSize = rxSize - sizeof(SocketMessage);
+        std::size_t dataSize = rxSize - sizeof(SocketMessage::Header);
 
-        switch (msg->messageType) {
+        switch (msg->header.messageType) {
         case SocketMessage::MessageType::CONNECTED:
             m_server.clientConnected(workerId);
             break;

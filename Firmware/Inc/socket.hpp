@@ -18,8 +18,11 @@ struct SocketMessage {
         DATA
     };
 
-    MessageType messageType;
-    std::array<char, 0> data;
+    struct Header {
+        MessageType messageType;
+    } header;
+
+    std::array<char, 1> data;
 };
 
 class EspSocketImpl {

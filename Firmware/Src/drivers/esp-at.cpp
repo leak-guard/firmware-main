@@ -564,7 +564,7 @@ void EspAtDriver::uartRxTaskMain()
                     exit = false;
                 }
 
-                if (m_ipdRemainingBytes < bytesInBuffer) {
+                if (bytesInBuffer > m_ipdRemainingBytes) {
                     bytesInBuffer = m_ipdRemainingBytes;
                 }
 
