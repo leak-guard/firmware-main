@@ -26,7 +26,6 @@ Device::Device()
     , m_oledDriver(&hi2c1)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
 {
-    setLocalTimezone("Berlin");
 }
 
 Device& Device::get()
@@ -51,6 +50,10 @@ void Device::initializeDrivers()
     m_server->initialize();
     m_uiService->initialize();
     m_flowMeterService->initialize();
+
+    if (!setLocalTimezone(m_configService->getCurrentConfig().timezoneId)) {
+        setLocalTimezone("London");
+    }
 }
 
 void Device::setError(ErrorCode code)
@@ -83,7 +86,26 @@ bool Device::setLocalTimezone(const char* timezoneName)
     }
 
     portENTER_CRITICAL();
-    memcpy(m_currentZone.get(), &tempZone, sizeof(tempZone));
+    ::memcpy(m_currentZone.get(), &tempZone, sizeof(tempZone));
+    portEXIT_CRITICAL();
+
+    return true;
+}
+
+bool Device::setLocalTimezone(std::uint32_t timezoneId)
+{
+    static constexpr auto ZONE_COUNT = 46;
+    static const char* ZONE_NAME = "Local Time";
+
+    if (timezoneId >= ZONE_COUNT) {
+        return false;
+    }
+
+    uzone_t tempZone {};
+    ::unpack_zone(&zone_defns[timezoneId], ZONE_NAME, &tempZone);
+
+    portENTER_CRITICAL();
+    ::memcpy(m_currentZone.get(), &tempZone, sizeof(tempZone));
     portEXIT_CRITICAL();
 
     return true;

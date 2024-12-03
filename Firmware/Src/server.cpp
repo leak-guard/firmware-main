@@ -288,6 +288,7 @@ void Server::addConfigRoutes()
         doc["passphrase"] = currentConfig.wifiPassword.ToCStr();
         doc["flow_meter_impulses"] = currentConfig.impulsesPerLiter;
         doc["valve_type"] = currentConfig.valveTypeNC ? "nc" : "no";
+        doc["timezone_id"] = currentConfig.timezoneId;
 
         addJsonHeader(res);
         ArduinoJson::serializeJson(doc, res);
@@ -312,6 +313,7 @@ void Server::addConfigRoutes()
                     JsonRule { "passphrase", JsonType::JSON_STRING },
                     JsonRule { "flow_meter_impulses", JsonType::JSON_UNSIGNED },
                     JsonRule { "valve_type", JsonType::JSON_STRING },
+                    JsonRule { "timezone_id", JsonType::JSON_UNSIGNED },
                 })) {
             return respondBadRequest(res);
         }
@@ -322,9 +324,12 @@ void Server::addConfigRoutes()
             currentConfig.wifiSsid = doc["ssid"].as<const char*>();
             currentConfig.wifiPassword = doc["passphrase"].as<const char*>();
             currentConfig.impulsesPerLiter = doc["flow_meter_impulses"].as<std::uint32_t>();
+            currentConfig.timezoneId = doc["timezone_id"].as<std::uint32_t>();
             StaticString<2> valveType = doc["valve_type"].as<const char*>();
             currentConfig.valveTypeNC = valveType == STR("nc");
             configService->commit();
+
+            Device::get().setLocalTimezone(currentConfig.timezoneId);
         }
 
         Device::get().getNetworkManager()->reloadCredentialsOneShot();

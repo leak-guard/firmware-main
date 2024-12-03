@@ -20,10 +20,11 @@ public:
         std::uint32_t configVersion {};
         StaticString<32> wifiSsid;
         StaticString<64> wifiPassword;
-        uint32_t impulsesPerLiter {};
+        std::uint32_t impulsesPerLiter {};
         bool valveTypeNC {};
         StaticString<32> adminPassword;
         std::array<std::uint32_t, 7> weeklySchedule {};
+        std::uint32_t timezoneId {};
 
         uint32_t unused {}; // <- this will force config size to be word-aligned
 
