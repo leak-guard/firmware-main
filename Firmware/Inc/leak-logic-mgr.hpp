@@ -11,21 +11,25 @@ public:
     void initialize();
 
 private:
-    static constexpr auto UPDATE_INTERVAL_MS = 60000;
+    static constexpr auto UPDATE_INTERVAL_MS = 1000;
 
-    LeakLogic leakLogic;
-    SensorState sensorState { .flowRate=0, .probeStates=StaticVector<bool, 256>() };
+    LeakLogic m_leakLogic;
+    SensorState m_sensorState { .flowRate=0, .probeStates=StaticVector<bool, 256>() };
 
-    time_t lastUpdateTime = 0;
+    time_t m_lastUpdateTime = 0;
+
+    TaskHandle_t m_leakLogicManagerTaskHandle {};
+    StaticTask_t m_leakLogicManagerTaskTcb {};
+    std::array<configSTACK_DEPTH_TYPE, 256> m_leakLogicManagerTaskStack {};
 
     void leakLogicManagerMain();
     void updateSensorState();
     void updateLeakLogic();
 
-    bool addCriterion(std::unique_ptr<LeakDetectionCriterion> criterion) { return leakLogic.addCriterion(std::move(criterion)); }
-    StaticVector<std::unique_ptr<LeakDetectionCriterion>, LEAK_LOGIC_MAX_CRITERIA>::Iterator getCriteria() { return leakLogic.getCriteria(); }
-    bool removeCriterion(const uint8_t index) { return leakLogic.removeCriterion(index); }
-    void clearCriteria() { leakLogic.clearCriteria(); }
+    bool addCriterion(std::unique_ptr<LeakDetectionCriterion> criterion) { return m_leakLogic.addCriterion(std::move(criterion)); }
+    StaticVector<std::unique_ptr<LeakDetectionCriterion>, LEAK_LOGIC_MAX_CRITERIA>::Iterator getCriteria() { return m_leakLogic.getCriteria(); }
+    bool removeCriterion(const uint8_t index) { return m_leakLogic.removeCriterion(index); }
+    void clearCriteria() { m_leakLogic.clearCriteria(); }
 };
 
 }

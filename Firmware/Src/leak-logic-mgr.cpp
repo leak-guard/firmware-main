@@ -12,11 +12,21 @@ void LeakLogicManager::leakLogicManagerEntryPoint(void* params)
 
 void LeakLogicManager::initialize()
 {
-    lastUpdateTime = Device::get().getLocalTime().toTimestamp();
+    m_lastUpdateTime = Device::get().getLocalTime().toTimestamp();
 
-    HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
-    HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
+    // TODO: Remove this - for testing only
+    addCriterion(std::make_unique<TimeBasedFlowRateCriterion>(1, 5));
+
+    m_leakLogicManagerTaskHandle = xTaskCreateStatic(
+        &LeakLogicManager::leakLogicManagerEntryPoint /* Task function */,
+        "Leak Logic Mgr" /* Task name */,
+        m_leakLogicManagerTaskStack.size() /* Stack size */,
+        this /* parameters */,
+        6 /* Prority */,
+        m_leakLogicManagerTaskStack.data() /* Task stack address */,
+        &m_leakLogicManagerTaskTcb /* Task control block */
+    );
+
 }
 
 void LeakLogicManager::leakLogicManagerMain()
@@ -32,7 +42,7 @@ void LeakLogicManager::leakLogicManagerMain()
 void LeakLogicManager::updateSensorState()
 {
     auto flowMeterService = Device::get().getFlowMeterService();
-    sensorState.flowRate = flowMeterService->getCurrentFlowInMlPerMinute() / 1000.0f;
+    m_sensorState.flowRate = flowMeterService->getCurrentFlowInMlPerMinute() / 1000.0f;
 
     // TODO: Hook up probe service
 }
@@ -40,12 +50,12 @@ void LeakLogicManager::updateSensorState()
 void LeakLogicManager::updateLeakLogic()
 {
     auto currentTime = Device::get().getLocalTime().toTimestamp();
-    leakLogic.update(sensorState, currentTime - lastUpdateTime);
-    lastUpdateTime = currentTime;
+    m_leakLogic.update(m_sensorState, currentTime - m_lastUpdateTime);
+    m_lastUpdateTime = currentTime;
 
-    auto action = leakLogic.getAction();
+    auto action = m_leakLogic.getAction();
     if (action.getActionType() != ActionType::NO_ACTION) {
-        // TODO: Alert
+        // TODO: Talk to valve service
         HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
     }
 }
