@@ -12,6 +12,7 @@
 #include "ui.hpp"
 #include "utc.hpp"
 
+#include <leak-logic-mgr.hpp>
 #include <memory>
 #include <optional>
 
@@ -74,6 +75,7 @@ public:
     ScopedResource<Server> getHttpServer() { return m_server; }
     ScopedResource<UiService> getUiService() { return m_uiService; }
     ScopedResource<FlowMeterService> getFlowMeterService() { return m_flowMeterService; }
+    ScopedResource<LeakLogicManager> getLeakLogicManager() { return m_leakLogicManager; }
 
 private:
     static std::optional<Device> m_instance;
@@ -99,6 +101,7 @@ private:
     ProtectedResource<Server> m_server;
     ProtectedResource<UiService> m_uiService;
     ProtectedResource<FlowMeterService> m_flowMeterService;
+    ProtectedResource<LeakLogicManager> m_leakLogicManager;
 };
 
 };

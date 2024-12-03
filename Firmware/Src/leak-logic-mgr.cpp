@@ -1,5 +1,6 @@
 #include <device.hpp>
 #include <leak-logic-mgr.hpp>
+#include <gpio.h>
 
 namespace lg {
 
@@ -12,6 +13,10 @@ void LeakLogicManager::leakLogicManagerEntryPoint(void* params)
 void LeakLogicManager::initialize()
 {
     lastUpdateTime = Device::get().getLocalTime().toTimestamp();
+
+    HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
+    HAL_Delay(200);
+    HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
 }
 
 void LeakLogicManager::leakLogicManagerMain()
@@ -41,6 +46,7 @@ void LeakLogicManager::updateLeakLogic()
     auto action = leakLogic.getAction();
     if (action.getActionType() != ActionType::NO_ACTION) {
         // TODO: Alert
+        HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
     }
 }
 

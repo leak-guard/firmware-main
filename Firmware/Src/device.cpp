@@ -50,6 +50,7 @@ void Device::initializeDrivers()
     m_server->initialize();
     m_uiService->initialize();
     m_flowMeterService->initialize();
+    m_leakLogicManager->initialize();
 
     if (!setLocalTimezone(m_configService->getCurrentConfig().timezoneId)) {
         setLocalTimezone("London");
