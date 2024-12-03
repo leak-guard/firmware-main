@@ -29,6 +29,7 @@ public:
         OLED_ERROR,
         EEPROM_ERROR,
         FLASH_ERROR,
+        ERROR_TYPE_COUNT
     };
 
     enum class SignalStrength {

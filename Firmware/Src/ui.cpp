@@ -1,4 +1,3 @@
-#include "u8g2.h"
 #include <ui.hpp>
 
 #include <device.hpp>
@@ -6,6 +5,7 @@
 
 // Bitmaps
 #define static static const
+#include <bitmaps/error.xbm>
 #include <bitmaps/hotspot.xbm>
 #include <bitmaps/l_per_min.xbm>
 #include <bitmaps/splashscreen.xbm>
@@ -77,9 +77,12 @@ void UiService::refreshLeds()
     bool wifiLit = Device::get().hasWifiStationConnection()
         || (blinkingLit && wifiStatus == Device::SignalStrength::CONNECTING);
 
-    HAL_GPIO_WritePin(LED_WIFI_GPIO_Port, LED_WIFI_Pin, wifiLit ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, deviceError ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED_OK_GPIO_Port, LED_OK_Pin, (!deviceError) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    ::HAL_GPIO_WritePin(
+        LED_WIFI_GPIO_Port, LED_WIFI_Pin, wifiLit ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    ::HAL_GPIO_WritePin(
+        LED_ERROR_GPIO_Port, LED_ERROR_Pin, deviceError ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    ::HAL_GPIO_WritePin(
+        LED_OK_GPIO_Port, LED_OK_Pin, (!deviceError) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void UiService::refreshDisplay()
@@ -98,7 +101,9 @@ void UiService::refreshDisplay()
     } else {
         drawStatusBar(u8g2);
 
-        if (Device::get().getSignalStrength() == Device::SignalStrength::HOTSPOT) {
+        if (Device::get().hasError()) {
+            drawError(u8g2);
+        } else if (Device::get().getSignalStrength() == Device::SignalStrength::HOTSPOT) {
             drawAccessPointCredentials(u8g2);
         } else {
             drawFlow(u8g2);
@@ -110,7 +115,7 @@ void UiService::refreshDisplay()
 
 void UiService::drawSplashScreen(u8g2_struct* u8g2)
 {
-    u8g2_DrawXBM(u8g2, 0, 0, splashscreen_width, splashscreen_height, splashscreen_bits);
+    ::u8g2_DrawXBM(u8g2, 0, 0, splashscreen_width, splashscreen_height, splashscreen_bits);
 }
 
 void UiService::drawStatusBar(u8g2_struct* u8g2)
@@ -118,52 +123,52 @@ void UiService::drawStatusBar(u8g2_struct* u8g2)
     std::uint32_t subseconds = 0, secondFraction = 0;
     auto localTime = Device::get().getLocalTime(&subseconds, &secondFraction);
 
-    u8g2_ClearBuffer(u8g2);
-    u8g2_SetFont(u8g2, u8g2_font_crox1cb_mn);
-    u8g2_DrawGlyph(u8g2, 0, 14, '0' + localTime.getDay() / 10);
-    u8g2_DrawGlyph(u8g2, 8, 14, '0' + localTime.getDay() % 10);
-    u8g2_DrawBox(u8g2, 18, 12, 2, 2);
-    u8g2_DrawGlyph(u8g2, 20, 14, '0' + localTime.getMonth() / 10);
-    u8g2_DrawGlyph(u8g2, 28, 14, '0' + localTime.getMonth() % 10);
+    ::u8g2_ClearBuffer(u8g2);
+    ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mn);
+    ::u8g2_DrawGlyph(u8g2, 0, 14, '0' + localTime.getDay() / 10);
+    ::u8g2_DrawGlyph(u8g2, 8, 14, '0' + localTime.getDay() % 10);
+    ::u8g2_DrawBox(u8g2, 18, 12, 2, 2);
+    ::u8g2_DrawGlyph(u8g2, 20, 14, '0' + localTime.getMonth() / 10);
+    ::u8g2_DrawGlyph(u8g2, 28, 14, '0' + localTime.getMonth() % 10);
 
-    u8g2_DrawGlyph(u8g2, 40, 14, '0' + localTime.getHour() / 10);
-    u8g2_DrawGlyph(u8g2, 48, 14, '0' + localTime.getHour() % 10);
+    ::u8g2_DrawGlyph(u8g2, 40, 14, '0' + localTime.getHour() / 10);
+    ::u8g2_DrawGlyph(u8g2, 48, 14, '0' + localTime.getHour() % 10);
     if (subseconds > secondFraction / 2) {
-        u8g2_DrawBox(u8g2, 58, 6, 2, 2);
-        u8g2_DrawBox(u8g2, 58, 12, 2, 2);
+        ::u8g2_DrawBox(u8g2, 58, 6, 2, 2);
+        ::u8g2_DrawBox(u8g2, 58, 12, 2, 2);
     }
-    u8g2_DrawGlyph(u8g2, 60, 14, '0' + localTime.getMinute() / 10);
-    u8g2_DrawGlyph(u8g2, 68, 14, '0' + localTime.getMinute() % 10);
+    ::u8g2_DrawGlyph(u8g2, 60, 14, '0' + localTime.getMinute() / 10);
+    ::u8g2_DrawGlyph(u8g2, 68, 14, '0' + localTime.getMinute() % 10);
     if (subseconds > secondFraction / 2) {
-        u8g2_DrawBox(u8g2, 78, 6, 2, 2);
-        u8g2_DrawBox(u8g2, 78, 12, 2, 2);
+        ::u8g2_DrawBox(u8g2, 78, 6, 2, 2);
+        ::u8g2_DrawBox(u8g2, 78, 12, 2, 2);
     }
-    u8g2_DrawGlyph(u8g2, 80, 14, '0' + localTime.getSecond() / 10);
-    u8g2_DrawGlyph(u8g2, 88, 14, '0' + localTime.getSecond() % 10);
+    ::u8g2_DrawGlyph(u8g2, 80, 14, '0' + localTime.getSecond() / 10);
+    ::u8g2_DrawGlyph(u8g2, 88, 14, '0' + localTime.getSecond() % 10);
 
     // Draw signal strength
     auto strength = Device::get().getSignalStrength();
     switch (strength) {
     case Device::SignalStrength::HOTSPOT:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 16, 1, 16, 16, hotspot_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 16, 1, 16, 16, hotspot_bits);
         break;
     case Device::SignalStrength::CONNECTING:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_conn_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_conn_bits);
         break;
     case Device::SignalStrength::STRENGTH_0:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig0_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig0_bits);
         break;
     case Device::SignalStrength::STRENGTH_1:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig1_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig1_bits);
         break;
     case Device::SignalStrength::STRENGTH_2:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig2_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig2_bits);
         break;
     case Device::SignalStrength::STRENGTH_3:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig3_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig3_bits);
         break;
     case Device::SignalStrength::STRENGTH_4:
-        u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig4_bits);
+        ::u8g2_DrawXBM(u8g2, OledDriver::WIDTH - 17, 0, 17, 17, wifi_sig4_bits);
         break;
     default:
         break;
@@ -172,11 +177,9 @@ void UiService::drawStatusBar(u8g2_struct* u8g2)
 
 void UiService::drawBox(u8g2_struct* u8g2)
 {
-    u8g2_DrawFrame(u8g2, 8, 22, OledDriver::WIDTH - 16, 38);
-    u8g2_DrawLine(u8g2, 9, 60, OledDriver::WIDTH - 8, 60);
-    u8g2_DrawLine(u8g2, OledDriver::WIDTH - 8, 23, OledDriver::WIDTH - 8, 59);
-    u8g2_DrawXBM(u8g2, 12, 27, 12, 12, wifi_user_bits);
-    u8g2_DrawXBM(u8g2, 12, 43, 12, 12, wifi_pass_bits);
+    ::u8g2_DrawFrame(u8g2, 8, 22, OledDriver::WIDTH - 16, 38);
+    ::u8g2_DrawLine(u8g2, 9, 60, OledDriver::WIDTH - 8, 60);
+    ::u8g2_DrawLine(u8g2, OledDriver::WIDTH - 8, 23, OledDriver::WIDTH - 8, 59);
 }
 
 void UiService::drawAccessPointCredentials(u8g2_struct* u8g2)
@@ -190,9 +193,12 @@ void UiService::drawAccessPointCredentials(u8g2_struct* u8g2)
 
     drawBox(u8g2);
 
-    u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
-    u8g2_DrawStr(u8g2, 27, 37, m_apSsid.ToCStr());
-    u8g2_DrawStr(u8g2, 27, 53, m_apPassword.ToCStr());
+    ::u8g2_DrawXBM(u8g2, 12, 27, 12, 12, wifi_user_bits);
+    ::u8g2_DrawXBM(u8g2, 12, 43, 12, 12, wifi_pass_bits);
+
+    ::u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
+    ::u8g2_DrawStr(u8g2, 27, 37, m_apSsid.ToCStr());
+    ::u8g2_DrawStr(u8g2, 27, 53, m_apPassword.ToCStr());
 }
 
 void UiService::drawFlow(u8g2_struct* u8g2)
@@ -236,6 +242,35 @@ void UiService::drawFlow(u8g2_struct* u8g2)
     auto textWidth = ::u8g2_GetStrWidth(u8g2, flowText.ToCStr());
     ::u8g2_DrawStr(u8g2, 106 - textWidth, 49, flowText.ToCStr());
     ::u8g2_DrawXBM(u8g2, 107, 30, l_per_min_width, l_per_min_height, l_per_min_bits);
+}
+
+void UiService::drawError(u8g2_struct* u8g2)
+{
+    using ArrayType = std::array<const char*, static_cast<int>(Device::ErrorCode::ERROR_TYPE_COUNT)>;
+    static const ArrayType ERRORS = {
+        "No error.",
+        "Unknown error!",
+        "WiFi module error!",
+        "OLED error!",
+        "EEPROM error!",
+        "Flash memory error!",
+    };
+
+    drawBox(u8g2);
+
+    ::u8g2_DrawXBM(u8g2, 54, 25, error_width, error_height, error_bits);
+    ::u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
+
+    const char* textToDraw = ERRORS[0];
+    auto error = Device::get().getError();
+    if (error < Device::ErrorCode::ERROR_TYPE_COUNT) {
+        textToDraw = ERRORS.at(static_cast<int>(error));
+        textToDraw = ERRORS[5];
+    }
+
+    auto width = ::u8g2_GetStrWidth(u8g2, textToDraw);
+    ::u8g2_DrawStr(u8g2,
+        (OledDriver::WIDTH - width) / 2, 55, textToDraw);
 }
 
 };
