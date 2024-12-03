@@ -96,7 +96,7 @@ UtcTime UtcTime::fromAscTime(const char* ascTime)
 
 std::uint32_t UtcTime::toTimestamp() const
 {
-    int lutIndex = (m_year - 2000) * MONTH_PER_YEAR + (m_month - 1);
+    int lutIndex = (m_year - 1970) * MONTH_PER_YEAR + (m_month - 1);
 
     std::uint32_t timestamp = MONTH_LUT.at(lutIndex);
     timestamp += (m_day - 1) * SEC_PER_MIN * MIN_PER_HOUR * HOUR_PER_DAY;
