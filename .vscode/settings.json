@@ -1,6 +1,7 @@
 {
     "editor.tabSize": 4,
     "clangd.arguments": [
-        "--query-driver=/**/arm-none-eabi*"
+        "--query-driver=/**/arm-none-eabi*",
+        "-header-insertion=never"
     ],
 }

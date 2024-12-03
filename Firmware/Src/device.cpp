@@ -3,6 +3,7 @@
 
 #include <gpio.h>
 #include <i2c.h>
+#include <quadspi.h>
 #include <rtc.h>
 #include <tim.h>
 #include <usart.h>
@@ -21,6 +22,7 @@ Device::Device()
     : m_currentZone(std::make_unique<uzone_t>())
     , m_eepromDriver(&hi2c2, EEPROM_WP_GPIO_Port, EEPROM_WP_Pin)
     , m_espDriver(&huart1)
+    , m_flashDriver(&hqspi)
     , m_oledDriver(&hi2c1)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
 {
@@ -40,6 +42,7 @@ void Device::initializeDrivers()
 {
     m_eepromDriver->initialize();
     m_espDriver.initialize();
+    m_flashDriver->initialize();
     m_oledDriver->initialize();
 
     m_cronService->initialize();

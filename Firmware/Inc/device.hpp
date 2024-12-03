@@ -3,6 +3,7 @@
 #include "cron.hpp"
 #include "drivers/eeprom.hpp"
 #include "drivers/esp-at.hpp"
+#include "drivers/flash.hpp"
 #include "drivers/oled.hpp"
 #include "flow-meter.hpp"
 #include "network-mgr.hpp"
@@ -27,6 +28,7 @@ public:
         WIFI_MODULE_FAILURE,
         OLED_ERROR,
         EEPROM_ERROR,
+        FLASH_ERROR,
     };
 
     enum class SignalStrength {
@@ -61,6 +63,7 @@ public:
 
     ScopedResource<EepromDriver> getEepromDriver() { return m_eepromDriver; }
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
+    ScopedResource<FlashDriver> getFlashDriver() { return m_flashDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
 
     ScopedResource<CronService> getCronService() { return m_cronService; }
@@ -84,6 +87,7 @@ private:
     // Drivers
     ProtectedResource<EepromDriver> m_eepromDriver;
     EspAtDriver m_espDriver; // <- this handles multithreading on its own
+    ProtectedResource<FlashDriver> m_flashDriver;
     ProtectedResource<OledDriver> m_oledDriver;
 
     // Services
