@@ -31,7 +31,7 @@ public:
     template <typename T>
     bool writeObject(std::uint32_t pageId, const T& object)
     {
-        static_assert(sizeof(T) <= FLASH_PAGE_SIZE, 
+        static_assert(sizeof(T) <= FLASH_PAGE_SIZE,
             "Object is too big to fit in one page");
 
         return writePage(pageId,
@@ -54,7 +54,7 @@ private:
     bool writeEnable();
     bool autoPollingMemReady();
     bool configureQspi();
-    bool doWritePage(std::uint32_t pageId, 
+    bool doWritePage(std::uint32_t pageId,
         const std::uint8_t* data, std::size_t count);
     bool doEraseSector(std::uint32_t sectorId);
 };

@@ -469,5 +469,4 @@ bool FlashDriver::doEraseSector(std::uint32_t sectorId)
     return true;
 }
 
-
 };
