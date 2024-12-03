@@ -32,7 +32,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${STARTUP_ASM} ${LINKER_SCRIPT})
 target_include_directories(${PROJECT_NAME}.elf PRIVATE "${PROJECT_BINARY_DIR}")
-target_link_libraries(${PROJECT_NAME}.elf PRIVATE ArduinoJson base64 freertos_kernel microhttp u8g2 utz)
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE ArduinoJson base64 freertos_kernel leak_logic microhttp u8g2 utz)
 target_link_libraries(${PROJECT_NAME}.elf PRIVATE stm32f7xx-hal-driver)
 
 # Pass HAL config to driver

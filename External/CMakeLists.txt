@@ -1,6 +1,7 @@
 add_subdirectory(ArduinoJson)
 include(base64.cmake)
 add_subdirectory(FreeRTOS-Kernel)
+add_subdirectory(leak-logic)
 add_subdirectory(microhttp)
 add_subdirectory(stm32)
 add_subdirectory(u8g2)
