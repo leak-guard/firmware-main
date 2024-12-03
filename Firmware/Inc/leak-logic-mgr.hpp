@@ -30,6 +30,9 @@ private:
     StaticVector<std::unique_ptr<LeakDetectionCriterion>, LEAK_LOGIC_MAX_CRITERIA>::Iterator getCriteria() { return m_leakLogic.getCriteria(); }
     bool removeCriterion(const uint8_t index) { return m_leakLogic.removeCriterion(index); }
     void clearCriteria() { m_leakLogic.clearCriteria(); }
+
+    void saveConfiguration() const;
+    void loadConfiguration();
 };
 
 }

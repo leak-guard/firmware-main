@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <leakguard/leak_logic.hpp>
 
 namespace lg {
 
@@ -25,6 +26,7 @@ public:
         StaticString<32> adminPassword;
         std::array<std::uint32_t, 7> weeklySchedule {};
         std::uint32_t timezoneId {};
+        StaticString<64> leakLogicConfig;
 
         uint32_t unused {}; // <- this will force config size to be word-aligned
 
