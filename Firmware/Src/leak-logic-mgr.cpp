@@ -62,15 +62,19 @@ void LeakLogicManager::updateLeakLogic()
 
 void LeakLogicManager::saveConfiguration() const
 {
-    const auto serializedConfig = m_leakLogic.serialize();
-    Device::get().getConfigService()->getCurrentConfig().leakLogicConfig = serializedConfig;
+    const auto serializedConfig = getCriteriaString();
+    auto configService = Device::get().getConfigService();
+    auto& config = configService->getCurrentConfig();
+
+    config.leakLogicConfig = serializedConfig;
+
     Device::get().getConfigService()->commit();
 }
 
 void LeakLogicManager::loadConfiguration()
 {
     const auto serializedConfig = Device::get().getConfigService()->getCurrentConfig().leakLogicConfig;
-    m_leakLogic.loadFromString(serializedConfig);
+    loadFromString(serializedConfig);
 }
 
 }

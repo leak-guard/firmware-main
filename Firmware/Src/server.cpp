@@ -364,6 +364,48 @@ void Server::addConfigRoutes()
     });
 }
 
+void Server::addCriteriaRoutes()
+{
+    m_server.get("/criteria", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        const auto leakLogicManager = Device::get().getLeakLogicManager();
+        const auto criteriaString = leakLogicManager->getCriteriaString();
+
+        addJsonHeader(res);
+        res << R"({"criteria":")";
+        res << criteriaString.ToCStr();
+        res << R"("})";
+    });
+
+    m_server.post("/criteria", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        ArduinoJson::StaticJsonDocument<512> doc;
+        auto error = ArduinoJson::deserializeJson(
+            doc, req.body.begin(), req.body.GetSize());
+
+        if (error != ArduinoJson::DeserializationError::Ok) {
+            return respondBadRequest(res);
+        }
+
+        if (!validateJson(doc, { JsonRule { "criteria", JsonType::JSON_STRING } })) {
+            return respondBadRequest(res);
+        }
+
+        const auto leakLogicManager = Device::get().getLeakLogicManager();
+        const auto criteriaString = StaticString<64>(doc["criteria"].as<const char*>());
+
+        leakLogicManager->loadFromString(criteriaString);   // TODO: Check for malformed criteria strings - WILL CAUSE A SEGFAULT if they're malformed
+
+        res.status(HttpStatusCode::OK_200);
+    });
+}
+
 void Server::addWaterRoutes()
 {
     m_server.get("/water-usage", [this](Request& req, Response& res) {

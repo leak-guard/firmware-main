@@ -10,6 +10,9 @@ public:
 
     void initialize();
 
+    [[nodiscard]] StaticString<64> getCriteriaString() const { return m_leakLogic.serialize(); }
+    void loadFromString(const StaticString<64>& criteriaString) { m_leakLogic.loadFromString(criteriaString); }
+
 private:
     static constexpr auto UPDATE_INTERVAL_MS = 1000;
 
