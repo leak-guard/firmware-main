@@ -265,7 +265,6 @@ void UiService::drawError(u8g2_struct* u8g2)
     auto error = Device::get().getError();
     if (error < Device::ErrorCode::ERROR_TYPE_COUNT) {
         textToDraw = ERRORS.at(static_cast<int>(error));
-        textToDraw = ERRORS[5];
     }
 
     auto width = ::u8g2_GetStrWidth(u8g2, textToDraw);
