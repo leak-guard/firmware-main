@@ -1,9 +1,9 @@
 #pragma once
+#include <leakguard/leak_logic.hpp>
 #include <leakguard/staticstring.hpp>
 
 #include <array>
 #include <cstdint>
-#include <leakguard/leak_logic.hpp>
 
 namespace lg {
 
@@ -12,6 +12,15 @@ public:
     static constexpr auto CONFIG_PAGES = 64;
     static constexpr auto CURRENT_CONFIG_VERSION = 1;
     static constexpr auto BLOCKADE_ENABLED_FLAG = 1U << 31;
+    static constexpr auto MAX_PROBES = 256;
+
+    struct ProbeId {
+        std::uint32_t word1, word2, word3;
+
+        auto operator<=>(const ProbeId& other) const = default;
+    };
+
+    static constexpr ProbeId INVALID_PROBE_ID = { 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU };
 
     // Only memcopyable types can be used here
     struct ConfigV1 {
@@ -27,6 +36,7 @@ public:
         std::array<std::uint32_t, 7> weeklySchedule {};
         std::uint32_t timezoneId {};
         StaticString<64> leakLogicConfig;
+        std::array<ProbeId, MAX_PROBES> pairedProbes {};
 
         uint32_t unused {}; // <- this will force config size to be word-aligned
 
