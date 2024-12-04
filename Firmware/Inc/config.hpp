@@ -37,6 +37,7 @@ public:
         std::uint32_t timezoneId {};
         StaticString<64> leakLogicConfig;
         std::array<ProbeId, MAX_PROBES> pairedProbes {};
+        std::array<bool, MAX_PROBES> ignoredProbes {};
 
         uint32_t unused {}; // <- this will force config size to be word-aligned
 

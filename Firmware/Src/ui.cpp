@@ -103,6 +103,8 @@ void UiService::refreshDisplay()
 
         if (Device::get().hasError()) {
             drawError(u8g2);
+        } else if (Device::get().getProbeService()->isInPairingMode()) {
+            drawPairing(u8g2);
         } else if (Device::get().getSignalStrength() == Device::SignalStrength::HOTSPOT) {
             drawAccessPointCredentials(u8g2);
         } else {
@@ -270,6 +272,18 @@ void UiService::drawError(u8g2_struct* u8g2)
     auto width = ::u8g2_GetStrWidth(u8g2, textToDraw);
     ::u8g2_DrawStr(u8g2,
         (OledDriver::WIDTH - width) / 2, 55, textToDraw);
+}
+
+void UiService::drawPairing(u8g2_struct* u8g2)
+{
+    static const char* TEXT = "Press PING on probe.";
+
+    drawBox(u8g2);
+    ::u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
+
+    auto width = ::u8g2_GetStrWidth(u8g2, TEXT);
+    ::u8g2_DrawStr(u8g2,
+        (OledDriver::WIDTH - width) / 2, 45, TEXT);
 }
 
 };

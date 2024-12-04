@@ -1,5 +1,3 @@
-#include "config.hpp"
-#include "leakguard/microhttp.hpp"
 #include <device.hpp>
 #include <initializer_list>
 #include <server.hpp>
@@ -10,6 +8,7 @@
 
 #include <array>
 #include <initializer_list>
+#include <limits>
 
 extern "C" {
 #include <base64.h>
@@ -112,11 +111,9 @@ void Server::initHttpMain()
     addGeneralRoutes();
     addBlockRoutes();
     addConfigRoutes();
+    addProbeRoutes();
     addWaterRoutes();
     addCriteriaRoutes();
-
-    // For testing EEPROM driver DMA:
-    // Device::get().getConfigService()->commit();
 
     m_server.start();
     vTaskSuspend(nullptr);
@@ -404,6 +401,173 @@ void Server::addCriteriaRoutes()
         leakLogicManager->loadFromString(criteriaString); // TODO: Check for malformed criteria strings - WILL CAUSE A SEGFAULT if they're malformed
 
         res.status(HttpStatusCode::OK_200);
+    });
+}
+
+static void printProbeInfo(Server::Response& res, const ProbeService::ProbeInfo& info)
+{
+    res << R"({"id":[)";
+    res << info.id1 << ',' << info.id2 << ',' << info.id3;
+    res << R"(],"battery_level":)";
+    res << info.batteryPercent;
+    res << R"(,"blocked":)";
+    res << (info.isIgnored ? "true" : "false");
+    res << '}';
+}
+
+void Server::addProbeRoutes()
+{
+    m_server.post("/probe/pair/enter", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        auto probeService = Device::get().getProbeService();
+
+        if (probeService->enterPairingMode()) {
+            res.status(HttpStatusCode::NoContent_204);
+        } else {
+            res.status(HttpStatusCode::Conflict_409);
+        }
+    });
+
+    m_server.post("/probe/pair/exit", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        auto probeService = Device::get().getProbeService();
+
+        if (probeService->leavePairingMode()) {
+            res.status(HttpStatusCode::NoContent_204);
+        } else {
+            res.status(HttpStatusCode::Conflict_409);
+        }
+    });
+
+    m_server.get("/probe/pair", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        bool isPairing = false;
+
+        {
+            auto probeService = Device::get().getProbeService();
+            isPairing = probeService->isInPairingMode();
+        }
+
+        addJsonHeader(res);
+        res << R"({"pairing":)";
+        res << (isPairing ? "true" : "false");
+        res << R"(})";
+    });
+
+    m_server.get("/probe", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        addJsonHeader(res);
+        auto probeService = Device::get().getProbeService();
+        bool first = true;
+
+        res << '{';
+        for (auto& probe : probeService->getPairedProbesInfo()) {
+            if (!first) {
+                res << ',';
+            }
+
+            res << '"' << probe.masterAddress << '"' << ':';
+            printProbeInfo(res, probe);
+
+            first = false;
+        }
+        res << '}';
+    });
+
+    m_server.get("/probe/id/:1", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        if (req.params.at(1) > std::numeric_limits<std::uint8_t>::max()) {
+            return respondBadRequest(res);
+        }
+
+        auto probeService = Device::get().getProbeService();
+        auto probeInfo = probeService->getPairedProbeInfo(
+            static_cast<std::uint8_t>(req.params.at(1)));
+
+        if (!probeInfo) {
+            res.status(HttpStatusCode::NotFound_404);
+            return;
+        }
+
+        addJsonHeader(res);
+        printProbeInfo(res, *probeInfo);
+    });
+
+    m_server.put("/probe/id/:1", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        if (req.params.at(1) > std::numeric_limits<std::uint8_t>::max()) {
+            return respondBadRequest(res);
+        }
+
+        ArduinoJson::StaticJsonDocument<128> doc;
+        auto error = ArduinoJson::deserializeJson(
+            doc, req.body.begin(), req.body.GetSize());
+
+        if (error != ArduinoJson::DeserializationError::Ok) {
+            return respondBadRequest(res);
+        }
+
+        if (!validateJson(doc, { JsonRule { "verb", JsonType::JSON_STRING } })) {
+            return respondBadRequest(res);
+        }
+
+        StaticString<8> verb = doc["verb"].as<const char*>();
+        auto probeService = Device::get().getProbeService();
+
+        if (verb == STR("block")) {
+            if (probeService->setProbeIgnored(
+                    static_cast<std::uint8_t>(req.params.at(1)), true)) {
+
+                res.status(HttpStatusCode::NoContent_204);
+            } else {
+                res.status(HttpStatusCode::NotFound_404);
+            }
+        } else if (verb == STR("unblock")) {
+            if (probeService->setProbeIgnored(
+                    static_cast<std::uint8_t>(req.params.at(1)), false)) {
+
+                res.status(HttpStatusCode::NoContent_204);
+            } else {
+                res.status(HttpStatusCode::NotFound_404);
+            }
+        } else {
+            return respondBadRequest(res);
+        }
+    });
+
+    m_server.del("/probe/id/:1", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        if (req.params.at(1) > std::numeric_limits<std::uint8_t>::max()) {
+            return respondBadRequest(res);
+        }
+
+        auto probeService = Device::get().getProbeService();
+        if (probeService->unpairProbe(static_cast<std::uint8_t>(req.params.at(1)))) {
+            res.status(HttpStatusCode::NoContent_204);
+        } else {
+            res.status(HttpStatusCode::NotFound_404);
+        }
     });
 }
 

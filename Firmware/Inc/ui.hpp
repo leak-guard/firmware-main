@@ -31,6 +31,7 @@ private:
     void drawAccessPointCredentials(u8g2_struct* u8g2);
     void drawFlow(u8g2_struct* u8g2);
     void drawError(u8g2_struct* u8g2);
+    void drawPairing(u8g2_struct* u8g2);
 
     TaskHandle_t m_uiServiceTaskHandle {};
     StaticTask_t m_uiServiceTaskTcb {};

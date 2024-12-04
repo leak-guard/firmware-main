@@ -54,26 +54,36 @@ void ProbeService::receivePacket(const ProbeMessage& packet)
     }
 }
 
-void ProbeService::enterPairingMode()
+bool ProbeService::enterPairingMode()
 {
+    if (m_pairingMode) {
+        return false;
+    }
+
     m_pairingModeEnterTime = xTaskGetTickCount();
     m_pairingMode = true;
+    return true;
 }
 
-void ProbeService::leavePairingMode()
+bool ProbeService::leavePairingMode()
 {
+    if (!m_pairingMode) {
+        return false;
+    }
+
     m_pairingMode = false;
     m_pairingModeEnterTime = 0;
+    return true;
 }
 
-void ProbeService::unpairProbe(std::uint8_t masterAddress)
+bool ProbeService::unpairProbe(std::uint8_t masterAddress)
 {
     {
         auto config = Device::get().getConfigService();
         auto& currentConfig = config->getCurrentConfig();
 
         if (!isPaired(currentConfig.pairedProbes.at(masterAddress))) {
-            return;
+            return false;
         }
 
         currentConfig.pairedProbes.at(masterAddress) = ConfigService::INVALID_PROBE_ID;
@@ -83,9 +93,45 @@ void ProbeService::unpairProbe(std::uint8_t masterAddress)
     for (std::size_t i = 0; i < m_pairedProbes.GetSize(); ++i) {
         if (m_pairedProbes[i].masterAddress == masterAddress) {
             m_pairedProbes.RemoveIndex(i);
-            return;
+            return true;
         }
     }
+
+    return false;
+}
+
+auto ProbeService::getPairedProbeInfo(std::uint8_t masterAddress) const -> const ProbeInfo*
+{
+    for (auto& probe : m_pairedProbes) {
+        if (probe.masterAddress == masterAddress) {
+            return &probe;
+        }
+    }
+
+    return nullptr;
+}
+
+bool ProbeService::setProbeIgnored(std::uint8_t masterAddress, bool ignored)
+{
+    {
+        auto config = Device::get().getConfigService();
+        auto& currentConfig = config->getCurrentConfig();
+
+        if (!isPaired(currentConfig.pairedProbes.at(masterAddress))) {
+            return false;
+        }
+
+        currentConfig.ignoredProbes.at(masterAddress) = ignored;
+        config->commit();
+    }
+
+    auto probe = findProbeForAddress(masterAddress);
+    if (probe) {
+        probe->isIgnored = ignored;
+        return true;
+    }
+
+    return false;
 }
 
 bool ProbeService::verifyChecksum(const ProbeMessage& packet)
@@ -147,6 +193,8 @@ void ProbeService::readProbesFromConfig()
                 .batteryMv = 0,
                 .lastPingTicks = currentTick,
                 .isAlerted = false,
+                .isDead = false,
+                .isIgnored = currentConfig.ignoredProbes.at(i),
             });
         }
     }
@@ -159,6 +207,17 @@ auto ProbeService::findProbeForPacket(const ProbeMessage& packet) -> ProbeInfo*
             && probe.id2 == packet.uid2
             && probe.id3 == packet.uid3) {
 
+            return &probe;
+        }
+    }
+
+    return nullptr;
+}
+
+auto ProbeService::findProbeForAddress(std::uint8_t masterAddress) -> ProbeInfo*
+{
+    for (auto& probe : m_pairedProbes) {
+        if (probe.masterAddress == masterAddress) {
             return &probe;
         }
     }
@@ -180,6 +239,8 @@ bool ProbeService::handlePairingPacket(const ProbeMessage& packet)
     probeId.word2 = packet.uid2;
     probeId.word3 = packet.uid3;
 
+    currentConfig.ignoredProbes.at(packet.dipId) = false;
+
     config->commit();
 
     m_pairedProbes.Append(ProbeInfo {
@@ -191,6 +252,8 @@ bool ProbeService::handlePairingPacket(const ProbeMessage& packet)
         .batteryMv = packet.batMvol,
         .lastPingTicks = xTaskGetTickCount(),
         .isAlerted = false,
+        .isDead = false,
+        .isIgnored = false,
     });
 
     leavePairingMode();

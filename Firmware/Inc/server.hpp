@@ -28,6 +28,7 @@ private:
     void addBlockRoutes();
     void addConfigRoutes();
     void addCriteriaRoutes();
+    void addProbeRoutes();
     void addWaterRoutes();
 
     bool checkAuthorization(Request& req, Response& res);

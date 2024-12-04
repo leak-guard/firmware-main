@@ -41,6 +41,7 @@ void ConfigService::resetToDefault()
     m_currentConfig.timezoneId = 40; // London timezone (GMT/UTC+0)
     m_currentConfig.leakLogicConfig.Clear();
     m_currentConfig.pairedProbes.fill(INVALID_PROBE_ID);
+    m_currentConfig.ignoredProbes.fill(false);
 
     m_currentConfig.unused = 0;
 

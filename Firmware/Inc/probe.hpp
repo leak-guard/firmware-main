@@ -35,6 +35,7 @@ public:
         std::uint32_t lastPingTicks {};
         bool isAlerted {};
         bool isDead {};
+        bool isIgnored {};
     };
 
     ProbeService() = default;
@@ -43,12 +44,17 @@ public:
     void receivePacket(const ProbeMessage& packet);
 
     [[nodiscard]] bool isInPairingMode() const { return m_pairingMode; }
-    void enterPairingMode();
-    void leavePairingMode();
+    bool enterPairingMode();
+    bool leavePairingMode();
 
-    void unpairProbe(std::uint8_t masterAddress);
+    bool unpairProbe(std::uint8_t masterAddress);
+
+    [[nodiscard]] const ProbeInfo* getPairedProbeInfo(std::uint8_t masterAddress) const;
+
     [[nodiscard]] const StaticVector<ProbeInfo, MAX_PROBES>&
     getPairedProbesInfo() const { return m_pairedProbes; }
+
+    bool setProbeIgnored(std::uint8_t masterAddress, bool ignored);
 
 private:
     static constexpr auto MAX_PAIRING_TIME_MS = 120000; // 2 min
@@ -65,7 +71,8 @@ private:
     void checkAllProbesAlive();
 
     void readProbesFromConfig();
-    ProbeInfo* findProbeForPacket(const ProbeMessage& packet);
+    [[nodiscard]] ProbeInfo* findProbeForPacket(const ProbeMessage& packet);
+    [[nodiscard]] ProbeInfo* findProbeForAddress(std::uint8_t masterAddress);
 
     bool handlePairingPacket(const ProbeMessage& packet);
     void handlePingPacket(const ProbeMessage& packet);
