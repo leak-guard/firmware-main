@@ -13,6 +13,7 @@
 #include "ui.hpp"
 #include "utc.hpp"
 
+#include <buzzer.hpp>
 #include <drivers/buzzer.hpp>
 #include <leak-logic-mgr.hpp>
 #include <memory>
@@ -80,6 +81,7 @@ public:
     ScopedResource<FlowMeterService> getFlowMeterService() { return m_flowMeterService; }
     ScopedResource<LeakLogicManager> getLeakLogicManager() { return m_leakLogicManager; }
     ScopedResource<ProbeService> getProbeService() { return m_probeService; }
+    ScopedResource<BuzzerService> getBuzzerService() { return m_buzzerService; }
 
 private:
     static std::optional<Device> m_instance;
@@ -108,6 +110,7 @@ private:
     ProtectedResource<FlowMeterService> m_flowMeterService;
     ProtectedResource<LeakLogicManager> m_leakLogicManager;
     ProtectedResource<ProbeService> m_probeService;
+    ProtectedResource<BuzzerService> m_buzzerService;
 };
 
 };

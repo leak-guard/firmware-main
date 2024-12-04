@@ -104,6 +104,7 @@ int main(void)
   MX_RTC_Init();
   MX_CRC_Init();
   MX_TIM3_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   rtos_main();
   /* USER CODE END 2 */

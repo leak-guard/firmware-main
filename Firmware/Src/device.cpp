@@ -26,6 +26,7 @@ Device::Device()
     , m_oledDriver(&hi2c1)
     , m_buzzerDriver(&htim3, TIM_CHANNEL_1)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
+    , m_buzzerService(&htim7)
 {
 }
 
@@ -54,9 +55,7 @@ void Device::initializeDrivers()
     m_flowMeterService->initialize();
     m_leakLogicManager->initialize();
     m_probeService->initialize();
-
-    m_buzzerDriver->setFrequency(440);
-    m_buzzerDriver->buzzerOn();
+    m_buzzerService->initialize();
 
     if (!setLocalTimezone(m_configService->getCurrentConfig().timezoneId)) {
         setLocalTimezone("London");
