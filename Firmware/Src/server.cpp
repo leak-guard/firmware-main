@@ -113,6 +113,7 @@ void Server::initHttpMain()
     addBlockRoutes();
     addConfigRoutes();
     addWaterRoutes();
+    addCriteriaRoutes();
 
     // For testing EEPROM driver DMA:
     // Device::get().getConfigService()->commit();
