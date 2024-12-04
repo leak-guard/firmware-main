@@ -28,15 +28,41 @@ void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration)
     buzzer->setFrequency(frequency);
     setToneTimer(duration);
 
-    buzzer->buzzerOn();
+    if (frequency != 0)
+        buzzer->buzzerOn();
 
     HAL_TIM_Base_Start_IT(m_toneTimer);
+}
+
+void BuzzerService::playSequence(const ToneSequence& sequence, SequenceMode sequenceMode = ONESHOT)
+{
+    m_sequenceMode = sequenceMode;
+    m_toneSequence = sequence;
+    m_toneSequenceIndex = 0;
+
+    playTone(m_toneSequence[m_toneSequenceIndex]);
 }
 
 void BuzzerService::toneTimerCallback()
 {
     Device::get().getBuzzerDriver()->buzzerOff();
     HAL_TIM_Base_Stop_IT(m_toneTimer);
+
+    if (m_sequenceMode) {
+        m_toneSequenceIndex++;
+        if (m_toneSequenceIndex >= m_toneSequence.GetSize()) {
+            if (m_sequenceMode == ONESHOT) {
+                m_sequenceMode = OFF;
+                return;
+            }
+            if (m_sequenceMode == LOOP) {
+                m_toneSequenceIndex = 0;
+            }
+        }
+
+        const auto tone = m_toneSequence[m_toneSequenceIndex];
+        playTone(tone);
+    }
 }
 
 void BuzzerService::setToneTimer(const uint16_t duration)
@@ -48,8 +74,7 @@ void BuzzerService::setToneTimer(const uint16_t duration)
 void BuzzerService::buzzerServiceMain()
 {
     while (true) {
-        playTone(440, 200);
-        vTaskDelay(1000);
+        vTaskDelay(10000);
     }
 }
 
