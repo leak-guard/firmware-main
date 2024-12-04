@@ -14,8 +14,16 @@ void LeakLogicManager::initialize()
 {
     m_lastUpdateTime = Device::get().getLocalTime().toTimestamp();
 
-    // TODO: Remove this - for testing only
-    addCriterion(std::make_unique<TimeBasedFlowRateCriterion>(1, 5));
+    auto configService = Device::get().getConfigService();
+    auto& config = configService->getCurrentConfig();
+
+    if (config.leakLogicConfig.IsEmpty()) {
+        // TODO: Remove this - for testing only
+        addCriterion(std::make_unique<TimeBasedFlowRateCriterion>(1, 5));
+    }
+    else {
+        loadFromString(config.leakLogicConfig);
+    }
 
     m_leakLogicManagerTaskHandle = xTaskCreateStatic(
         &LeakLogicManager::leakLogicManagerEntryPoint /* Task function */,
