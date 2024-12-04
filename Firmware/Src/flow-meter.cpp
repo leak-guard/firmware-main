@@ -15,8 +15,8 @@ void FlowMeterService::flowMeterServiceEntryPoint(void* params)
 
 void FlowMeterService::initialize()
 {
-    Device::get().getCronService()->registerJob([] { 
-        Device::get().getFlowMeterService()->handleInterval(); 
+    Device::get().getCronService()->registerJob([] {
+        Device::get().getFlowMeterService()->handleInterval();
     });
 
     m_flowMeterServiceTaskHandle = xTaskCreateStatic(

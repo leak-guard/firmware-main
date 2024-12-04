@@ -1,6 +1,6 @@
 #include <device.hpp>
-#include <leak-logic-mgr.hpp>
 #include <gpio.h>
+#include <leak-logic-mgr.hpp>
 
 namespace lg {
 
@@ -21,8 +21,7 @@ void LeakLogicManager::initialize()
         // TODO: Remove this - for testing only
         addCriterion(std::make_unique<TimeBasedFlowRateCriterion>(1, 5));
         saveConfiguration();
-    }
-    else {
+    } else {
         loadFromString(config.leakLogicConfig);
     }
 
@@ -35,7 +34,6 @@ void LeakLogicManager::initialize()
         m_leakLogicManagerTaskStack.data() /* Task stack address */,
         &m_leakLogicManagerTaskTcb /* Task control block */
     );
-
 }
 
 void LeakLogicManager::leakLogicManagerMain()
