@@ -13,6 +13,7 @@
 #include "ui.hpp"
 #include "utc.hpp"
 
+#include <drivers/buzzer.hpp>
 #include <leak-logic-mgr.hpp>
 #include <memory>
 #include <optional>
@@ -69,6 +70,7 @@ public:
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
     ScopedResource<FlashDriver> getFlashDriver() { return m_flashDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
+    ScopedResource<BuzzerDriver> getBuzzerDriver() { return m_buzzerDriver; }
 
     ScopedResource<CronService> getCronService() { return m_cronService; }
     ScopedResource<ConfigService> getConfigService() { return m_configService; }
@@ -95,6 +97,7 @@ private:
     EspAtDriver m_espDriver; // <- this handles multithreading on its own
     ProtectedResource<FlashDriver> m_flashDriver;
     ProtectedResource<OledDriver> m_oledDriver;
+    ProtectedResource<BuzzerDriver> m_buzzerDriver;
 
     // Services
     ProtectedResource<CronService> m_cronService;
