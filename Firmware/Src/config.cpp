@@ -24,6 +24,8 @@ void ConfigService::initialize()
         for (int i = 0; i < sizeof(m_storedConfig) / sizeof(std::uint32_t); ++i) {
             *(storedPtr++) = 0xFFFFFFFFU;
         }
+
+        m_needFullWrite = true;
     }
 }
 
@@ -80,7 +82,7 @@ bool ConfigService::commit()
             pageBytes = EepromDriver::EEPROM_PAGE_SIZE_BYTES;
         }
 
-        bool same = compareWords(currentPtr, storedPtr, pageBytes / sizeof(std::uint32_t));
+        bool same = !m_needFullWrite && compareWords(currentPtr, storedPtr, pageBytes / sizeof(std::uint32_t));
         if (!same) {
             writeFlags.at(currentPage) = true;
             if (!eeprom->writePage(currentPage,
@@ -124,6 +126,7 @@ bool ConfigService::commit()
 
     eeprom->disableWrites();
     copyCurrentToStored();
+    m_needFullWrite = false;
 
     return true;
 }

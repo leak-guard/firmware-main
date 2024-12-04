@@ -62,6 +62,7 @@ private:
 
     Config m_currentConfig;
     Config m_storedConfig;
+    bool m_needFullWrite {};
 };
 
 };
