@@ -7,6 +7,7 @@
 #include "drivers/oled.hpp"
 #include "flow-meter.hpp"
 #include "network-mgr.hpp"
+#include "probe.hpp"
 #include "scoped-res.hpp"
 #include "server.hpp"
 #include "ui.hpp"
@@ -76,6 +77,7 @@ public:
     ScopedResource<UiService> getUiService() { return m_uiService; }
     ScopedResource<FlowMeterService> getFlowMeterService() { return m_flowMeterService; }
     ScopedResource<LeakLogicManager> getLeakLogicManager() { return m_leakLogicManager; }
+    ScopedResource<ProbeService> getProbeService() { return m_probeService; }
 
 private:
     static std::optional<Device> m_instance;
@@ -102,6 +104,7 @@ private:
     ProtectedResource<UiService> m_uiService;
     ProtectedResource<FlowMeterService> m_flowMeterService;
     ProtectedResource<LeakLogicManager> m_leakLogicManager;
+    ProtectedResource<ProbeService> m_probeService;
 };
 
 };
