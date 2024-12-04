@@ -1,6 +1,8 @@
 #pragma once
 #include <leakguard/circularbuffer.hpp>
 
+#include <utc.hpp>
+
 #include <cstdint>
 
 #include <FreeRTOS.h>
@@ -23,8 +25,9 @@ public:
     void initialize();
     void impulseButtonPressed();
 
-    std::uint32_t getCurrentFlowInMlPerMinute() const { return m_currentFlowMlPerMinute; }
-    std::uint32_t getTotalVolumeInMl() const { return m_totalMilliliters; }
+    [[nodiscard]] std::uint32_t getCurrentFlowInMlPerMinute() const { return m_currentFlowMlPerMinute; }
+    [[nodiscard]] std::uint32_t getTotalVolumeInMl() const { return m_totalMilliliters; }
+    [[nodiscard]] std::uint32_t getTodayFlowInMl() const { return m_totalMilliliters - m_midnightMilliliters; }
 
 private:
     static constexpr auto HISTORY_LENGTH = 10;
@@ -38,6 +41,7 @@ private:
     void flowMeterServiceMain();
     void updateFlow();
     void enableCounter();
+    void handleInterval();
 
     TIM_HandleTypeDef* m_timer;
     GPIO_TypeDef* m_impPort;
@@ -56,6 +60,8 @@ private:
 
     volatile std::uint32_t m_currentFlowMlPerMinute {};
     volatile std::uint32_t m_totalMilliliters {};
+    volatile std::uint32_t m_midnightMilliliters {};
+    UtcTime m_midnightTime {};
 };
 
 };

@@ -1,6 +1,7 @@
 #include <flow-meter.hpp>
 
 #include <device.hpp>
+#include <utc.hpp>
 
 #include <stm32f7xx_ll_tim.h>
 
@@ -14,6 +15,10 @@ void FlowMeterService::flowMeterServiceEntryPoint(void* params)
 
 void FlowMeterService::initialize()
 {
+    Device::get().getCronService()->registerJob([] { 
+        Device::get().getFlowMeterService()->handleInterval(); 
+    });
+
     m_flowMeterServiceTaskHandle = xTaskCreateStatic(
         &FlowMeterService::flowMeterServiceEntryPoint /* Task function */,
         "Flow Meter Svc" /* Task name */,
@@ -114,6 +119,21 @@ void FlowMeterService::enableCounter()
 {
     LL_TIM_SetCounter(m_timer->Instance, 0);
     HAL_TIM_Base_Start(m_timer);
+}
+
+void FlowMeterService::handleInterval()
+{
+    // This runs every minute
+
+    auto localTime = Device::get().getLocalTime();
+    if (localTime.getDay() != m_midnightTime.getDay()
+        || localTime.getMonth() != m_midnightTime.getMonth()
+        || localTime.getYear() != m_midnightTime.getYear()) {
+
+        // Reset today's usage
+        m_midnightMilliliters = m_totalMilliliters;
+        m_midnightTime = localTime;
+    }
 }
 
 extern "C" void HAL_GPIO_EXTI_Callback(std::uint16_t pin)

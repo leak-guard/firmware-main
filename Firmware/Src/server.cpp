@@ -414,11 +414,12 @@ void Server::addWaterRoutes()
             return;
         }
 
-        std::uint32_t flowMl = 0, totalMl = 0;
+        std::uint32_t flowMl = 0, totalMl = 0, todayMl = 0;
         {
             auto flowMeter = Device::get().getFlowMeterService();
             flowMl = flowMeter->getCurrentFlowInMlPerMinute();
             totalMl = flowMeter->getTotalVolumeInMl();
+            todayMl = flowMeter->getTodayFlowInMl();
         }
 
         addJsonHeader(res);
@@ -426,6 +427,8 @@ void Server::addWaterRoutes()
         res << flowMl;
         res << R"(,"total_volume":)";
         res << totalMl;
+        res << R"(,"today_volume":)";
+        res << todayMl;
         res << R"(})";
     });
 }
