@@ -24,6 +24,11 @@ void BuzzerDriver::setFrequency(const uint32_t freq)
     __HAL_TIM_SET_PRESCALER(m_timer, prescalerForFreq(freq));
 }
 
+void BuzzerDriver::setDutyCycle(const uint8_t duty) const
+{
+    m_timer->Instance->CCR1 = duty * m_counterPeriod / 100;
+}
+
 uint32_t BuzzerDriver::prescalerForFreq(const uint32_t freq)
 {
     if (freq <= 0) return 0;

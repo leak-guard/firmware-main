@@ -11,6 +11,7 @@ public:
     void buzzerOn();
     void buzzerOff();
     void setFrequency(uint32_t freq);
+    void setDutyCycle(uint8_t duty) const;
 
 private:
     uint32_t prescalerForFreq(uint32_t freq);

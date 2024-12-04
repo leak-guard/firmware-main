@@ -3,6 +3,11 @@
 
 namespace lg {
 
+BuzzerService::ToneSequence chord1;
+BuzzerService::ToneSequence chord2;
+BuzzerService::ToneSequence chord3;
+BuzzerService::ToneSequence chord4;
+
 void BuzzerService::buzzerServiceEntryPoint(void* params)
 {
     auto buzzerService = reinterpret_cast<BuzzerService*>(params);
@@ -11,6 +16,26 @@ void BuzzerService::buzzerServiceEntryPoint(void* params)
 
 void BuzzerService::initialize()
 {
+    chord1.Append({ C_4, 50 });
+    chord1.Append({ Eb4, 50 });
+    chord1.Append({ G_4, 50 });
+    chord1.Append({ Bb4, 50 });
+
+    chord2.Append({ C_4, 50 });
+    chord2.Append({ Eb4, 50 });
+    chord2.Append({ Gb4, 50 });
+    chord2.Append({ Bb4, 50 });
+
+    chord3.Append({ C_4, 50 });
+    chord3.Append({ Eb4, 50 });
+    chord3.Append({ F_4, 50 });
+    chord3.Append({ Bb4, 50 });
+
+    chord4.Append({ C_4, 50 });
+    chord4.Append({ Eb4, 50 });
+    chord4.Append({ F_4, 50 });
+    chord4.Append({ A_4, 50 });
+
     m_buzzerServiceTaskHandle = xTaskCreateStatic(
         &BuzzerService::buzzerServiceEntryPoint /* Task function */,
         "Buzzer Service" /* Task name */,
@@ -45,8 +70,17 @@ void BuzzerService::playSequence(const ToneSequence& sequence, SequenceMode sequ
 
 void BuzzerService::toneTimerCallback()
 {
+    static uint8_t duty = 10;
+    static bool dutyDir = false;
+
     Device::get().getBuzzerDriver()->buzzerOff();
     HAL_TIM_Base_Stop_IT(m_toneTimer);
+
+    if (dutyDir) duty++;
+    else duty--;
+    if (duty > 90) dutyDir = false;
+    else if (duty < 10) dutyDir = true;
+    Device::get().getBuzzerDriver()->setDutyCycle(duty);
 
     if (m_sequenceMode) {
         m_toneSequenceIndex++;
@@ -74,7 +108,14 @@ void BuzzerService::setToneTimer(const uint16_t duration)
 void BuzzerService::buzzerServiceMain()
 {
     while (true) {
-        vTaskDelay(10000);
+        playSequence(chord1, LOOP);
+        vTaskDelay(3000);
+        playSequence(chord2, LOOP);
+        vTaskDelay(3000);
+        playSequence(chord3, LOOP);
+        vTaskDelay(3000);
+        playSequence(chord4, LOOP);
+        vTaskDelay(3000);
     }
 }
 
