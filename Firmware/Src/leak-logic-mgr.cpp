@@ -68,7 +68,7 @@ void LeakLogicManager::saveConfiguration() const
 
     config.leakLogicConfig = serializedConfig;
 
-    Device::get().getConfigService()->commit();
+    configService->commit();
 }
 
 void LeakLogicManager::loadConfiguration()
