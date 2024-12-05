@@ -8,6 +8,7 @@
 #include "flow-meter.hpp"
 #include "network-mgr.hpp"
 #include "probe.hpp"
+#include "lora.hpp"
 #include "scoped-res.hpp"
 #include "server.hpp"
 #include "ui.hpp"
@@ -84,6 +85,7 @@ public:
     ScopedResource<UiService> getUiService() { return m_uiService; }
     ScopedResource<FlowMeterService> getFlowMeterService() { return m_flowMeterService; }
     ScopedResource<LeakLogicManager> getLeakLogicManager() { return m_leakLogicManager; }
+    ScopedResource<LoraService> getLoraService() { return m_loraService; }
     ScopedResource<ProbeService> getProbeService() { return m_probeService; }
     ScopedResource<BuzzerService> getBuzzerService() { return m_buzzerService; }
 
@@ -121,6 +123,7 @@ private:
     ProtectedResource<LeakLogicManager> m_leakLogicManager;
     ProtectedResource<ProbeService> m_probeService;
     ProtectedResource<BuzzerService> m_buzzerService;
+    ProtectedResource<LoraService> m_loraService;
 };
 
 };
