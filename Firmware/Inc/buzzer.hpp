@@ -1,6 +1,7 @@
 #pragma once
 #include <FreeRTOS.h>
 #include <array>
+#include <functional>
 #include <leakguard/staticstring.hpp>
 #include <leakguard/staticvector.hpp>
 #include <stm32f7xx_hal.h>
@@ -69,6 +70,11 @@ public:
         LOOP
     };
 
+    enum SoundMode {
+        TONE,
+        SAMPLE
+    };
+
     using ToneSequence = StaticVector<Tone, 256>;
 
     static void buzzerServiceEntryPoint(void* params);
@@ -79,10 +85,17 @@ public:
 
     void playSequence(const ToneSequence& sequence, SequenceMode sequenceMode);
 
+    void playSample(const std::function<bool(uint32_t)>& sampleProvider, uint16_t sampleRate);
+
     void toneTimerCallback();
 
 private:
+    static constexpr int TONE_TIM_PRESCALER = 215;
+    static constexpr int SAMPLE_TIM_PERIOD = 4096;
+
     void setToneTimer(uint16_t duration);
+    void setToneSoundMode();
+    void setSampleSoundMode(uint16_t sampleRate);
 
     void buzzerServiceMain();
 
@@ -95,6 +108,11 @@ private:
     ToneSequence m_toneSequence;
     uint32_t m_toneSequenceIndex = 0;
     SequenceMode m_sequenceMode = OFF;
+
+    SoundMode m_soundMode = TONE;
+    uint32_t m_sampleTime = 0;
+
+    std::function<bool(uint32_t)> m_sampleProvider;
 };
 
 }

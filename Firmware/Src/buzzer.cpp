@@ -3,11 +3,6 @@
 
 namespace lg {
 
-BuzzerService::ToneSequence chord1;
-BuzzerService::ToneSequence chord2;
-BuzzerService::ToneSequence chord3;
-BuzzerService::ToneSequence chord4;
-
 void BuzzerService::buzzerServiceEntryPoint(void* params)
 {
     auto buzzerService = reinterpret_cast<BuzzerService*>(params);
@@ -16,25 +11,9 @@ void BuzzerService::buzzerServiceEntryPoint(void* params)
 
 void BuzzerService::initialize()
 {
-    chord1.Append({ C_4, 50 });
-    chord1.Append({ Eb4, 50 });
-    chord1.Append({ G_4, 50 });
-    chord1.Append({ Bb4, 50 });
-
-    chord2.Append({ C_4, 50 });
-    chord2.Append({ Eb4, 50 });
-    chord2.Append({ Gb4, 50 });
-    chord2.Append({ Bb4, 50 });
-
-    chord3.Append({ C_4, 50 });
-    chord3.Append({ Eb4, 50 });
-    chord3.Append({ F_4, 50 });
-    chord3.Append({ Bb4, 50 });
-
-    chord4.Append({ C_4, 50 });
-    chord4.Append({ Eb4, 50 });
-    chord4.Append({ F_4, 50 });
-    chord4.Append({ A_4, 50 });
+    playSample([](uint32_t t) {
+        return (t*((t&4096?t%65536<59392?7:t&7:16)+(1&t>>14))>>(3&-t>>(t&2048?2:10))|t>>(t&16384?t&4096?10:3:2)) & 128;
+    }, 8000);
 
     m_buzzerServiceTaskHandle = xTaskCreateStatic(
         &BuzzerService::buzzerServiceEntryPoint /* Task function */,
@@ -49,6 +28,8 @@ void BuzzerService::initialize()
 
 void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration)
 {
+    setToneSoundMode();
+
     auto buzzer = Device::get().getBuzzerDriver();
     buzzer->setFrequency(frequency);
     setToneTimer(duration);
@@ -65,37 +46,54 @@ void BuzzerService::playSequence(const ToneSequence& sequence, SequenceMode sequ
     m_toneSequence = sequence;
     m_toneSequenceIndex = 0;
 
+    Device::get().getBuzzerDriver()->setDutyCycle(100);
     playTone(m_toneSequence[m_toneSequenceIndex]);
+}
+
+void BuzzerService::playSample(const std::function<bool(uint32_t)>& sampleProvider, uint16_t sampleRate)
+{
+    setSampleSoundMode(sampleRate);
+    m_sampleTime = 0;
+
+    m_sampleProvider = sampleProvider;
+
+    Device::get().getBuzzerDriver()->setDutyCycle(0);
+    Device::get().getBuzzerDriver()->buzzerOn();
+
+    HAL_TIM_Base_Start_IT(m_toneTimer);
 }
 
 void BuzzerService::toneTimerCallback()
 {
-    static uint8_t duty = 10;
-    static bool dutyDir = false;
+    if (m_soundMode == TONE) {
+        Device::get().getBuzzerDriver()->buzzerOff();
+        HAL_TIM_Base_Stop_IT(m_toneTimer);
 
-    Device::get().getBuzzerDriver()->buzzerOff();
-    HAL_TIM_Base_Stop_IT(m_toneTimer);
-
-    if (dutyDir) duty++;
-    else duty--;
-    if (duty > 90) dutyDir = false;
-    else if (duty < 10) dutyDir = true;
-    Device::get().getBuzzerDriver()->setDutyCycle(duty);
-
-    if (m_sequenceMode) {
-        m_toneSequenceIndex++;
-        if (m_toneSequenceIndex >= m_toneSequence.GetSize()) {
-            if (m_sequenceMode == ONESHOT) {
-                m_sequenceMode = OFF;
-                return;
+        if (m_sequenceMode) {
+            m_toneSequenceIndex++;
+            if (m_toneSequenceIndex >= m_toneSequence.GetSize()) {
+                if (m_sequenceMode == ONESHOT) {
+                    m_sequenceMode = OFF;
+                    return;
+                }
+                if (m_sequenceMode == LOOP) {
+                    m_toneSequenceIndex = 0;
+                }
             }
-            if (m_sequenceMode == LOOP) {
-                m_toneSequenceIndex = 0;
-            }
+
+            const auto tone = m_toneSequence[m_toneSequenceIndex];
+            playTone(tone);
         }
+    }
+    else if (m_soundMode == SAMPLE) {
+        HAL_TIM_Base_Stop_IT(m_toneTimer);
+        __HAL_TIM_CLEAR_FLAG(m_toneTimer, TIM_FLAG_UPDATE);
 
-        const auto tone = m_toneSequence[m_toneSequenceIndex];
-        playTone(tone);
+        bool sample = m_sampleProvider(m_sampleTime);
+        Device::get().getBuzzerDriver()->setDutyCycle(sample ? 0 : 100);
+        m_sampleTime++;
+
+        HAL_TIM_Base_Start_IT(m_toneTimer);
     }
 }
 
@@ -105,17 +103,27 @@ void BuzzerService::setToneTimer(const uint16_t duration)
     __HAL_TIM_CLEAR_FLAG(m_toneTimer, TIM_FLAG_UPDATE);
 }
 
+void BuzzerService::setToneSoundMode()
+{
+    m_soundMode = TONE;
+    __HAL_TIM_SET_PRESCALER(m_toneTimer, TONE_TIM_PRESCALER);
+}
+
+void BuzzerService::setSampleSoundMode(const uint16_t sampleRate)
+{
+    m_soundMode = SAMPLE;
+
+    auto prescaler = (HAL_RCC_GetSysClockFreq() / (SAMPLE_TIM_PERIOD * sampleRate) >> 1) - 1;
+    __HAL_TIM_SET_PRESCALER(m_toneTimer, prescaler);
+    __HAL_TIM_SetAutoreload(m_toneTimer, SAMPLE_TIM_PERIOD);
+    __HAL_TIM_SET_COUNTER(m_toneTimer, 0);
+    __HAL_TIM_CLEAR_FLAG(m_toneTimer, TIM_FLAG_UPDATE);
+}
+
 void BuzzerService::buzzerServiceMain()
 {
     while (true) {
-        playSequence(chord1, LOOP);
-        vTaskDelay(3000);
-        playSequence(chord2, LOOP);
-        vTaskDelay(3000);
-        playSequence(chord3, LOOP);
-        vTaskDelay(3000);
-        playSequence(chord4, LOOP);
-        vTaskDelay(3000);
+        vTaskDelay(1000);
     }
 }
 

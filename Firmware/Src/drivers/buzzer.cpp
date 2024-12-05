@@ -26,7 +26,7 @@ void BuzzerDriver::setFrequency(const uint32_t freq)
 
 void BuzzerDriver::setDutyCycle(const uint8_t duty) const
 {
-    m_timer->Instance->CCR1 = duty * m_counterPeriod / 100;
+    m_timer->Instance->CCR1 = duty == 100 ? m_counterPeriod + 1 : duty * m_counterPeriod / 100;
 }
 
 uint32_t BuzzerDriver::prescalerForFreq(const uint32_t freq)
