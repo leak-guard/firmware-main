@@ -11,9 +11,9 @@ void BuzzerService::buzzerServiceEntryPoint(void* params)
 
 void BuzzerService::initialize()
 {
-    playSample([](uint32_t t) {
-        return (t*((t&4096?t%65536<59392?7:t&7:16)+(1&t>>14))>>(3&-t>>(t&2048?2:10))|t>>(t&16384?t&4096?10:3:2)) & 128;
-    }, 8000);
+    // playSample([](uint32_t t) {
+    //     return ((((2*t>>11&t>>13)%11%9%7*t>>1&127)+(((t>>11)+2&3?0:1)*(-t>>4&127)*((t>>2^-(t&t>>2))*t&255)>>8)+(5000/(t%2048?t%2048:1)*(-t>>12&7?-t>>11&1:1)&128))+64)&128;
+    // }, 8000);
 
     m_buzzerServiceTaskHandle = xTaskCreateStatic(
         &BuzzerService::buzzerServiceEntryPoint /* Task function */,
@@ -26,12 +26,14 @@ void BuzzerService::initialize()
     );
 }
 
-void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration)
+void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration, const uint8_t dutyCycle = 50)
 {
-    setToneSoundMode();
+    if (m_soundMode != TONE)
+        setToneSoundMode();
 
     auto buzzer = Device::get().getBuzzerDriver();
     buzzer->setFrequency(frequency);
+    buzzer->setDutyCycle(dutyCycle);
     setToneTimer(duration);
 
     if (frequency != 0)
@@ -40,13 +42,12 @@ void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration)
     HAL_TIM_Base_Start_IT(m_toneTimer);
 }
 
-void BuzzerService::playSequence(const ToneSequence& sequence, SequenceMode sequenceMode = ONESHOT)
+void BuzzerService::playSequence(const ToneSequence& sequence, const SequenceMode sequenceMode = ONESHOT)
 {
     m_sequenceMode = sequenceMode;
     m_toneSequence = sequence;
     m_toneSequenceIndex = 0;
 
-    Device::get().getBuzzerDriver()->setDutyCycle(100);
     playTone(m_toneSequence[m_toneSequenceIndex]);
 }
 

@@ -19,6 +19,12 @@ public:
     struct Tone {
         uint16_t frequency;
         uint16_t duration;
+        uint8_t dutyCycle;
+
+        Tone() {}
+        Tone(const uint16_t frequency, const uint16_t duration, const uint8_t dutyCycle)
+            : frequency(frequency), duration(duration), dutyCycle(dutyCycle) {}
+        Tone(const uint16_t frequency, const uint16_t duration) : Tone(frequency, duration, 50) {}
     };
 
     enum Note : uint16_t {
@@ -80,8 +86,8 @@ public:
     static void buzzerServiceEntryPoint(void* params);
     void initialize();
 
-    void playTone(uint16_t frequency, uint16_t duration);
-    void playTone(const Tone tone) { playTone(tone.frequency, tone.duration); }
+    void playTone(uint16_t frequency, uint16_t duration, uint8_t dutyCycle);
+    void playTone(const Tone tone) { playTone(tone.frequency, tone.duration, tone.dutyCycle); }
 
     void playSequence(const ToneSequence& sequence, SequenceMode sequenceMode);
 
