@@ -7,6 +7,7 @@
 #include <rtc.h>
 #include <tim.h>
 #include <usart.h>
+#include <spi.h>
 
 #include <stm32f7xx_ll_i2c.h>
 
@@ -25,6 +26,7 @@ Device::Device()
     , m_flashDriver(&hqspi)
     , m_oledDriver(&hi2c1)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
+    , m_loraService(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port, LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin)
 {
 }
 
@@ -50,6 +52,7 @@ void Device::initializeDrivers()
     m_server->initialize();
     m_uiService->initialize();
     m_flowMeterService->initialize();
+    m_loraService->initialize();
     m_leakLogicManager->initialize();
     m_probeService->initialize();
 
