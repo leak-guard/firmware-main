@@ -11,10 +11,6 @@ void BuzzerService::buzzerServiceEntryPoint(void* params)
 
 void BuzzerService::initialize()
 {
-    // playSample([](uint32_t t) {
-    //     return ((((2*t>>11&t>>13)%11%9%7*t>>1&127)+(((t>>11)+2&3?0:1)*(-t>>4&127)*((t>>2^-(t&t>>2))*t&255)>>8)+(5000/(t%2048?t%2048:1)*(-t>>12&7?-t>>11&1:1)&128))+64)&128;
-    // }, 8000);
-
     m_buzzerServiceTaskHandle = xTaskCreateStatic(
         &BuzzerService::buzzerServiceEntryPoint /* Task function */,
         "Buzzer Service" /* Task name */,
