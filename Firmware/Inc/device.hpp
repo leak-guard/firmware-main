@@ -12,6 +12,7 @@
 #include "server.hpp"
 #include "ui.hpp"
 #include "utc.hpp"
+#include "valve.hpp"
 
 #include <buzzer.hpp>
 #include <drivers/buzzer.hpp>
@@ -78,6 +79,7 @@ public:
     ScopedResource<ConfigService> getConfigService() { return m_configService; }
     ScopedResource<NetworkManager> getNetworkManager() { return m_networkManager; }
     ScopedResource<Server> getHttpServer() { return m_server; }
+    ScopedResource<ValveService> getValveService() { return m_valveService; }
     ScopedResource<UiService> getUiService() { return m_uiService; }
     ScopedResource<FlowMeterService> getFlowMeterService() { return m_flowMeterService; }
     ScopedResource<LeakLogicManager> getLeakLogicManager() { return m_leakLogicManager; }
@@ -111,6 +113,7 @@ private:
     ProtectedResource<ConfigService> m_configService;
     ProtectedResource<NetworkManager> m_networkManager;
     ProtectedResource<Server> m_server;
+    ProtectedResource<ValveService> m_valveService;
     ProtectedResource<UiService> m_uiService;
     ProtectedResource<FlowMeterService> m_flowMeterService;
     ProtectedResource<LeakLogicManager> m_leakLogicManager;

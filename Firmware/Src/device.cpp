@@ -25,6 +25,7 @@ Device::Device()
     , m_flashDriver(&hqspi)
     , m_oledDriver(&hi2c1)
     , m_buzzerDriver(&htim3, TIM_CHANNEL_1)
+    , m_valveService(VALVE_OUT_GPIO_Port, VALVE_OUT_Pin)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
     , m_buzzerService(&htim7)
 {
@@ -51,6 +52,7 @@ void Device::initializeDrivers()
     m_configService->initialize();
     m_networkManager->initialize();
     m_server->initialize();
+    m_valveService->initialize();
     m_uiService->initialize();
     m_flowMeterService->initialize();
     m_leakLogicManager->initialize();
