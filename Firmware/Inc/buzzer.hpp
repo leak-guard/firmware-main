@@ -21,10 +21,17 @@ public:
         uint16_t duration;
         uint8_t dutyCycle;
 
-        Tone() {}
+        Tone() { }
         Tone(const uint16_t frequency, const uint16_t duration, const uint8_t dutyCycle)
-            : frequency(frequency), duration(duration), dutyCycle(dutyCycle) {}
-        Tone(const uint16_t frequency, const uint16_t duration) : Tone(frequency, duration, 50) {}
+            : frequency(frequency)
+            , duration(duration)
+            , dutyCycle(dutyCycle)
+        {
+        }
+        Tone(const uint16_t frequency, const uint16_t duration)
+            : Tone(frequency, duration, 50)
+        {
+        }
     };
 
     enum Note : uint16_t {

@@ -81,8 +81,7 @@ void BuzzerService::toneTimerCallback()
             const auto tone = m_toneSequence[m_toneSequenceIndex];
             playTone(tone);
         }
-    }
-    else if (m_soundMode == SAMPLE) {
+    } else if (m_soundMode == SAMPLE) {
         HAL_TIM_Base_Stop_IT(m_toneTimer);
         __HAL_TIM_CLEAR_FLAG(m_toneTimer, TIM_FLAG_UPDATE);
 

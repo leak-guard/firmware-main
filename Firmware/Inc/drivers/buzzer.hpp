@@ -5,7 +5,11 @@ namespace lg {
 
 class BuzzerDriver {
 public:
-    explicit BuzzerDriver(TIM_HandleTypeDef* timer, uint32_t channel) : m_timer(timer), m_channel(channel) {}
+    explicit BuzzerDriver(TIM_HandleTypeDef* timer, uint32_t channel)
+        : m_timer(timer)
+        , m_channel(channel)
+    {
+    }
 
     void initialize();
     void buzzerOn();
