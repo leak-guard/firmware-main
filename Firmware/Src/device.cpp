@@ -163,6 +163,19 @@ UtcTime Device::getLocalTime(
     return UtcTime { timestamp + timestampOffset };
 }
 
+std::uint32_t Device::getMonotonicTimestamp() const
+{
+    std::uint32_t ticks = xTaskGetTickCount();
+    std::uint32_t delta = ticks - m_monotonicLastTicks + m_monotonicRemainder;
+    std::uint32_t wholeSeconds = delta / 1000;
+
+    m_monotonicTime += wholeSeconds;
+    m_monotonicRemainder = delta - wholeSeconds * 1000;
+    m_monotonicLastTicks = ticks;
+
+    return m_monotonicTime;
+}
+
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-do-while,cppcoreguidelines-pro-type-cstyle-cast)

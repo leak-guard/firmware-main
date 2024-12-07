@@ -62,6 +62,7 @@ public:
     bool setLocalTimezone(std::uint32_t timezoneId);
     UtcTime getLocalTime(
         std::uint32_t* subseconds = nullptr, std::uint32_t* secondFraction = nullptr);
+    std::uint32_t getMonotonicTimestamp() const;
 
     SignalStrength getSignalStrength() const { return m_signalStrength; }
     bool hasWifiStationConnection() const { return m_signalStrength > SignalStrength::STRENGTH_0; }
@@ -87,6 +88,10 @@ private:
     static std::optional<Device> m_instance;
     volatile ErrorCode m_error { ErrorCode::NO_ERROR };
     volatile SignalStrength m_signalStrength { SignalStrength::NO_STRENGTH };
+
+    mutable std::uint32_t m_monotonicTime {};
+    mutable std::uint32_t m_monotonicLastTicks {};
+    mutable std::uint32_t m_monotonicRemainder {};
 
     // We want to avoid dynamic memory at all, but we also don't want to
     // mess in code by using a not-C++-ready header <utz.h>

@@ -56,7 +56,7 @@ void LeakLogicManager::updateSensorState()
 
 void LeakLogicManager::updateLeakLogic()
 {
-    auto currentTime = Device::get().getLocalTime().toTimestamp();
+    auto currentTime = Device::get().getMonotonicTimestamp();
     m_leakLogic.update(m_sensorState, currentTime - m_lastUpdateTime);
     m_lastUpdateTime = currentTime;
 
