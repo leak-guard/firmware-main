@@ -65,6 +65,10 @@ void ValveService::unblock()
         clearBlockedDueTo(BlockReason::ALARM_BLOCK);
     }
 
+    if (isBlockedDueTo(BlockReason::PROBE_DIED_BLOCK)) {
+        clearBlockedDueTo(BlockReason::PROBE_DIED_BLOCK);
+    }
+
     update();
 }
 

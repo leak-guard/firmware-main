@@ -1,6 +1,8 @@
 #pragma once
-
 #include <leakguard/leak_logic.hpp>
+
+#include <FreeRTOS.h>
+#include <task.h>
 
 namespace lg {
 
@@ -9,6 +11,7 @@ public:
     static void leakLogicManagerEntryPoint(void* params);
 
     void initialize();
+    void forceUpdate();
 
     [[nodiscard]] StaticString<64> getCriteriaString() const { return m_leakLogic.serialize(); }
     void loadFromString(const StaticString<64>& criteriaString) { m_leakLogic.loadFromString(criteriaString); }

@@ -36,23 +36,38 @@ void LeakLogicManager::initialize()
     );
 }
 
+void LeakLogicManager::forceUpdate()
+{
+    xTaskNotify(m_leakLogicManagerTaskHandle, 1, eSetBits);
+}
+
 void LeakLogicManager::leakLogicManagerMain()
 {
     while (true) {
         updateSensorState();
         updateLeakLogic();
 
-        vTaskDelay(UPDATE_INTERVAL_MS);
+        xTaskNotifyWait(0, 1, NULL, UPDATE_INTERVAL_MS);
     }
 }
 
 void LeakLogicManager::updateSensorState()
 {
-    auto flowMeterService = Device::get().getFlowMeterService();
-    m_sensorState.flowRate = flowMeterService->getCurrentFlowInMlPerMinute() / 1000.0f;
+    {
+        auto flowMeterService = Device::get().getFlowMeterService();
+        m_sensorState.flowRate = static_cast<float>(
+                                     flowMeterService->getCurrentFlowInMlPerMinute())
+            / 1000.0f;
+    }
 
-    // TODO: Hook up probe service
-    // auto probeService = Device::get().getProbeService();
+    for (auto& entry : m_sensorState.probeStates) {
+        entry = false;
+    }
+
+    auto probeService = Device::get().getProbeService();
+    for (auto& probe : probeService->getPairedProbesInfo()) {
+        m_sensorState.probeStates[probe.masterAddress] = probe.isAlerted && !probe.isDead;
+    }
 }
 
 void LeakLogicManager::updateLeakLogic()
@@ -62,8 +77,14 @@ void LeakLogicManager::updateLeakLogic()
     m_lastUpdateTime = currentTime;
 
     auto action = m_leakLogic.getAction();
+
     if (action.getActionType() != ActionType::NO_ACTION) {
-        // TODO: Talk to valve service
+        auto valveService = Device::get().getValveService();
+        auto reason = action.getActionReason() == ActionReason::LEAK_DETECTED_BY_PROBE
+            ? ValveService::BlockReason::ALARM_BLOCK
+            : ValveService::BlockReason::HEURISTICS_BLOCK;
+
+        valveService->blockDueTo(reason);
     }
 }
 

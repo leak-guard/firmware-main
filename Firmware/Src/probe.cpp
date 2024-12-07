@@ -363,7 +363,11 @@ std::uint8_t ProbeService::millivoltsToPercent(std::uint32_t millivolts)
 
 void ProbeService::startAlarm(ProbeInfo& probe)
 {
-    // TODO: implement alarm
+    if (probe.isDead && probe.isAlerted) {
+        Device::get().getValveService()->blockDueTo(ValveService::BlockReason::PROBE_DIED_BLOCK);
+    }
+
+    Device::get().getLeakLogicManager()->forceUpdate();
 }
 
 };
