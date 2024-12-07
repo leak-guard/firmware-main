@@ -267,7 +267,54 @@ void Server::addBlockRoutes()
             configService->commit();
         }
 
+        Device::get().getValveService()->update();
+
         res.status(HttpStatusCode::NoContent_204);
+    });
+
+    m_server.get("/water-block", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        addJsonHeader(res);
+
+        auto valveService = Device::get().getValveService();
+        res << R"({"block":)";
+        res << (valveService->isValveBlocked() ? R"("active")" : R"("inactive")");
+        res << '}';
+    });
+
+    m_server.post("/water-block", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        ArduinoJson::StaticJsonDocument<128> doc;
+        auto error = ArduinoJson::deserializeJson(
+            doc, req.body.begin(), req.body.GetSize());
+
+        if (error != ArduinoJson::DeserializationError::Ok) {
+            return respondBadRequest(res);
+        }
+
+        if (!validateJson(doc,
+                {
+                    JsonRule { "block", JsonType::JSON_STRING },
+                })) {
+            return respondBadRequest(res);
+        }
+
+        StaticString<16> action = doc["block"].as<const char*>();
+        if (action == STR("active")) {
+            auto valveService = Device::get().getValveService();
+            valveService->blockDueTo(ValveService::BlockReason::USER_BLOCK);
+        } else if (action == STR("inactive")) {
+            auto valveService = Device::get().getValveService();
+            valveService->unblock();
+        } else {
+            return respondBadRequest(res);
+        }
     });
 }
 
@@ -331,6 +378,7 @@ void Server::addConfigRoutes()
         }
 
         Device::get().getNetworkManager()->reloadCredentialsOneShot();
+        Device::get().getValveService()->update();
         res.status(HttpStatusCode::NoContent_204);
     });
 

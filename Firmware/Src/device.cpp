@@ -71,6 +71,8 @@ void Device::setError(ErrorCode code)
 
 void Device::updateRtcTime(const UtcTime& newTime)
 {
+    m_timeIsValid = true;
+
     RTC_TimeTypeDef time;
     RTC_DateTypeDef date;
 
@@ -79,6 +81,8 @@ void Device::updateRtcTime(const UtcTime& newTime)
     if (HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN) == HAL_OK) {
         HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN);
     }
+
+    getValveService()->update();
 }
 
 bool Device::setLocalTimezone(const char* timezoneName)

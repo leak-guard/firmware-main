@@ -63,6 +63,7 @@ public:
     bool setLocalTimezone(std::uint32_t timezoneId);
     UtcTime getLocalTime(
         std::uint32_t* subseconds = nullptr, std::uint32_t* secondFraction = nullptr);
+    [[nodiscard]] bool isTimeValid() const { return m_timeIsValid; }
     std::uint32_t getMonotonicTimestamp() const;
 
     SignalStrength getSignalStrength() const { return m_signalStrength; }
@@ -90,6 +91,7 @@ private:
     static std::optional<Device> m_instance;
     volatile ErrorCode m_error { ErrorCode::NO_ERROR };
     volatile SignalStrength m_signalStrength { SignalStrength::NO_STRENGTH };
+    volatile bool m_timeIsValid {};
 
     mutable std::uint32_t m_monotonicTime {};
     mutable std::uint32_t m_monotonicLastTicks {};

@@ -14,6 +14,7 @@ public:
         SCHEDULE_BLOCK,
         HEURISTICS_BLOCK,
         ALARM_BLOCK,
+        STARTUP_BLOCK
     };
 
     ValveService(GPIO_TypeDef* valvePort, std::uint16_t valvePin)

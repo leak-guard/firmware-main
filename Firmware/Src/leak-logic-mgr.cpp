@@ -52,6 +52,7 @@ void LeakLogicManager::updateSensorState()
     m_sensorState.flowRate = flowMeterService->getCurrentFlowInMlPerMinute() / 1000.0f;
 
     // TODO: Hook up probe service
+    // auto probeService = Device::get().getProbeService();
 }
 
 void LeakLogicManager::updateLeakLogic()
@@ -63,7 +64,6 @@ void LeakLogicManager::updateLeakLogic()
     auto action = m_leakLogic.getAction();
     if (action.getActionType() != ActionType::NO_ACTION) {
         // TODO: Talk to valve service
-        HAL_GPIO_TogglePin(LED_VALVE_GPIO_Port, LED_VALVE_Pin);
     }
 }
 

@@ -8,10 +8,17 @@ void ValveService::initialize()
 {
     Device::get().getCronService()->registerJob(
         [this] { Device::get().getValveService()->handleInterval(); });
+
+    setBlockedDueTo(BlockReason::STARTUP_BLOCK);
+    updatePinState();
 }
 
 void ValveService::update()
 {
+    if (isBlockedDueTo(BlockReason::STARTUP_BLOCK)) {
+        clearBlockedDueTo(BlockReason::STARTUP_BLOCK);
+    }
+
     auto localTime = Device::get().getLocalTime();
     auto scheduleBlock = checkIfBlockedBySchedule(localTime);
 
@@ -30,8 +37,8 @@ void ValveService::update()
 
 void ValveService::blockDueTo(BlockReason reason)
 {
-    if (reason == BlockReason::SCHEDULE_BLOCK) {
-        // Only ValveService can manage blocks due to schedule
+    if (reason == BlockReason::SCHEDULE_BLOCK || reason == BlockReason::STARTUP_BLOCK) {
+        // Only ValveService can manage blocks due to schedule and startup
         return;
     }
 

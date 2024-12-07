@@ -77,12 +77,16 @@ void UiService::refreshLeds()
     bool wifiLit = Device::get().hasWifiStationConnection()
         || (blinkingLit && wifiStatus == Device::SignalStrength::CONNECTING);
 
+    bool valveClosed = Device::get().getValveService()->isValveBlocked();
+
     ::HAL_GPIO_WritePin(
         LED_WIFI_GPIO_Port, LED_WIFI_Pin, wifiLit ? GPIO_PIN_SET : GPIO_PIN_RESET);
     ::HAL_GPIO_WritePin(
         LED_ERROR_GPIO_Port, LED_ERROR_Pin, deviceError ? GPIO_PIN_SET : GPIO_PIN_RESET);
     ::HAL_GPIO_WritePin(
         LED_OK_GPIO_Port, LED_OK_Pin, (!deviceError) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    ::HAL_GPIO_WritePin(
+        LED_VALVE_GPIO_Port, LED_VALVE_Pin, (valveClosed) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void UiService::refreshDisplay()

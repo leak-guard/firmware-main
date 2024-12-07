@@ -329,7 +329,7 @@ std::uint8_t ProbeService::millivoltsToPercent(std::uint32_t millivolts)
     // Based on: https://www.powerstream.com/z/AA-100mA.png
     static constexpr std::array<std::uint32_t, 11> DISCHARGE_CURVE = {
         1500, 1400, 1350, 1300, 1275, 1250,
-        1210, 1190, 1150, 1100, 1000
+        1220, 1190, 1150, 1100, 1000
     };
 
     if (millivolts == 0) {
