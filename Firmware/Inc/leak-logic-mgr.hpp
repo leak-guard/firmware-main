@@ -17,7 +17,7 @@ private:
     static constexpr auto UPDATE_INTERVAL_MS = 1000;
 
     LeakLogic m_leakLogic;
-    SensorState m_sensorState { .flowRate = 0, .probeStates = StaticVector<bool, 256>() };
+    SensorState m_sensorState { .flowRate = 0, .probeStates = std::array<bool, 256>() };
 
     time_t m_lastUpdateTime = 0;
 
