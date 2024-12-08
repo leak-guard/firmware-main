@@ -5,10 +5,11 @@
 #include "drivers/esp-at.hpp"
 #include "drivers/flash.hpp"
 #include "drivers/oled.hpp"
+#include "drivers/sx1278.hpp"
 #include "flow-meter.hpp"
 #include "network-mgr.hpp"
 #include "probe.hpp"
-#include "lora.hpp"
+#include "sx1278.hpp"
 #include "scoped-res.hpp"
 #include "server.hpp"
 #include "ui.hpp"
@@ -70,6 +71,7 @@ public:
     EspAtDriver& getEspAtDriver() { return m_espDriver; }
     ScopedResource<FlashDriver> getFlashDriver() { return m_flashDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
+    ScopedResource<Sx1278Driver> getLoraDriver() { return m_loraDriver; }
 
     ScopedResource<CronService> getCronService() { return m_cronService; }
     ScopedResource<ConfigService> getConfigService() { return m_configService; }
@@ -97,6 +99,7 @@ private:
     EspAtDriver m_espDriver; // <- this handles multithreading on its own
     ProtectedResource<FlashDriver> m_flashDriver;
     ProtectedResource<OledDriver> m_oledDriver;
+    ProtectedResource<Sx1278Driver> m_loraDriver;
 
     // Services
     ProtectedResource<CronService> m_cronService;

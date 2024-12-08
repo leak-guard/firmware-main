@@ -28,6 +28,7 @@ file(GLOB_RECURSE SOURCES
 include_directories(
     Core/Inc
     Firmware/Inc
+    Firmware/Inc/drivers
 )
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${STARTUP_ASM} ${LINKER_SCRIPT})

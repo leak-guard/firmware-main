@@ -25,8 +25,9 @@ Device::Device()
     , m_espDriver(&huart1)
     , m_flashDriver(&hqspi)
     , m_oledDriver(&hi2c1)
+    , m_loraDriver(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port, LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin, &htim3)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
-    , m_loraService(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port, LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin)
+    , m_loraService(&hspi1)
 {
 }
 
@@ -45,6 +46,7 @@ void Device::initializeDrivers()
     m_espDriver.initialize();
     m_flashDriver->initialize();
     m_oledDriver->initialize();
+    m_loraDriver->initialize();
 
     m_cronService->initialize();
     m_configService->initialize();

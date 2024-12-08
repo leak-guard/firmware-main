@@ -27,4 +27,4 @@
 	url = https://github.com/bblanchon/ArduinoJson
 [submodule "External/leak-logic"]
 	path = External/leak-logic
-	url = git@github.com:leak-guard/leak-logic
+	url = https://github.com/leak-guard/leak-logic
