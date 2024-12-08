@@ -1,4 +1,6 @@
-#include "lora.hpp"
+#include <lora.hpp>
+
+#include <device.hpp>
 
 namespace lg {
 
@@ -10,31 +12,32 @@ void LoraService::loraServiceEntryPoint(void* params)
 
 void LoraService::initialize()
 {
-    SX1278_hw.dio0.port = m_dio0Port;
-    SX1278_hw.dio0.pin = m_dio0Pin;
-    SX1278_hw.nss.port = m_nssPort;
-    SX1278_hw.nss.pin = m_nssPin;
-    SX1278_hw.reset.port = m_resetPort;
-    SX1278_hw.reset.pin = m_resetPin;
-    SX1278_hw.spi = m_spi;
+    auto loraDriver = Device::get().getLoraDriver();
+    loraDriver->SX1278_init(
+        LoraDriver::LoraFrequency::FREQ_433MHz,
+        LoraDriver::LoraPower::POWER_20DBM,
+        LoraDriver::LoraSpreadFactor::SF_12,
+        LoraDriver::LoraBandwidth::BW_125KHZ,
+        LoraDriver::LoraCodingRate::CR_4_5,
+        false,
+        8,
+        LoraDriver::SYNC_WORD);
 
-    SX1278.hw = &SX1278_hw;
-
-    SX1278_init(&SX1278, SX1278_FREQ_433MHz, SX1278_POWER_20DBM, SX1278_LORA_SF_12,
-        SX1278_LORA_BW_125KHZ, SX1278_LORA_CR_4_5, SX1278_LORA_CRC_DIS, 8, SX127X_SYNC_WORD);
-
-    SX1278_LoRaEntryRx(&SX1278, 16, 2000);
+    // loraDriver->SX1278_LoRaEntryRx(sizeof(ProbeMessage), 2000);
+    loraDriver->SX1278_LoRaEntryRx(16, 2000);
+    loraServiceMain();
 }
 
 void LoraService::loraServiceMain()
 {
-    while (true) {
-        Message receivedMsg;
-        ret = SX1278_LoRaRxPacket(&SX1278);
+    auto loraDriver = Device::get().getLoraDriver();
+    ProbeMessage receivedMsg {};
 
-        if (ret > 0)
-        {
-            SX1278_read(&SX1278, (uint8_t*)&receivedMsg, sizeof(Message));
+    while (true) {
+        auto ret = loraDriver->SX1278_LoRaRxPacket();
+
+        if (ret > 0) {
+            loraDriver->SX1278_read((uint8_t*)&receivedMsg, sizeof(ProbeMessage));
 
             for (uint8_t i = 0; i < 200; i++) {
                 HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6); // buzzer out
@@ -43,6 +46,7 @@ void LoraService::loraServiceMain()
             }
         }
 
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0); // imp led
         HAL_Delay(800);
     }
 }

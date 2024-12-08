@@ -4,11 +4,12 @@
 #include "drivers/eeprom.hpp"
 #include "drivers/esp-at.hpp"
 #include "drivers/flash.hpp"
+#include "drivers/lora.hpp"
 #include "drivers/oled.hpp"
 #include "flow-meter.hpp"
+#include "lora.hpp"
 #include "network-mgr.hpp"
 #include "probe.hpp"
-#include "lora.hpp"
 #include "scoped-res.hpp"
 #include "server.hpp"
 #include "ui.hpp"
@@ -76,6 +77,7 @@ public:
     ScopedResource<FlashDriver> getFlashDriver() { return m_flashDriver; }
     ScopedResource<OledDriver> getOledDriver() { return m_oledDriver; }
     ScopedResource<BuzzerDriver> getBuzzerDriver() { return m_buzzerDriver; }
+    ScopedResource<LoraDriver> getLoraDriver() { return m_loraDriver; }
 
     ScopedResource<CronService> getCronService() { return m_cronService; }
     ScopedResource<ConfigService> getConfigService() { return m_configService; }
@@ -111,6 +113,7 @@ private:
     ProtectedResource<FlashDriver> m_flashDriver;
     ProtectedResource<OledDriver> m_oledDriver;
     ProtectedResource<BuzzerDriver> m_buzzerDriver;
+    ProtectedResource<LoraDriver> m_loraDriver;
 
     // Services
     ProtectedResource<CronService> m_cronService;

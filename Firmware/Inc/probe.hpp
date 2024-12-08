@@ -11,7 +11,7 @@ enum class MsgType : std::uint8_t {
     ALARM = 2
 };
 
-struct ProbeMessage {
+struct __attribute__((packed)) ProbeMessage {
     MsgType messageType;
     uint32_t uid1;
     uint32_t uid2;

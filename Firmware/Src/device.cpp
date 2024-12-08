@@ -5,9 +5,9 @@
 #include <i2c.h>
 #include <quadspi.h>
 #include <rtc.h>
+#include <spi.h>
 #include <tim.h>
 #include <usart.h>
-#include <spi.h>
 
 #include <stm32f7xx_ll_i2c.h>
 
@@ -26,10 +26,10 @@ Device::Device()
     , m_flashDriver(&hqspi)
     , m_oledDriver(&hi2c1)
     , m_buzzerDriver(&htim3, TIM_CHANNEL_1)
+    , m_loraDriver(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port, LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin)
     , m_valveService(VALVE_OUT_GPIO_Port, VALVE_OUT_Pin)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
     , m_buzzerService(&htim7)
-    , m_loraService(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port, LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin)
 {
 }
 
