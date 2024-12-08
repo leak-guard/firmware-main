@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 #include <stm32f7xx_hal.h>
 
@@ -13,7 +14,7 @@ public:
     void initialize();
 
 private:
-    void loraServiceMain();
+    void handlePacket(const std::uint8_t* buffer, std::size_t length);
 };
 
 }

@@ -310,8 +310,14 @@ void Server::addBlockRoutes()
             auto valveService = Device::get().getValveService();
             valveService->blockDueTo(ValveService::BlockReason::USER_BLOCK);
         } else if (action == STR("inactive")) {
-            auto valveService = Device::get().getValveService();
-            valveService->unblock();
+            {
+                auto valveService = Device::get().getValveService();
+                valveService->unblock();
+            }
+            {
+                auto probeService = Device::get().getProbeService();
+                probeService->stopAlarm();
+            }
         } else {
             return respondBadRequest(res);
         }
@@ -457,7 +463,11 @@ static void printProbeInfo(Server::Response& res, const ProbeService::ProbeInfo&
     res << R"({"id":[)";
     res << info.id1 << ',' << info.id2 << ',' << info.id3;
     res << R"(],"battery_level":)";
-    res << info.batteryPercent;
+    if (info.batteryPercent == 0xFF) {
+        res << "null";
+    } else {
+        res << static_cast<std::uint32_t>(info.batteryPercent);
+    }
     res << R"(,"blocked":)";
     res << (info.isIgnored ? "true" : "false");
     res << '}';
@@ -526,7 +536,7 @@ void Server::addProbeRoutes()
                 res << ',';
             }
 
-            res << '"' << probe.masterAddress << '"' << ':';
+            res << '"' << static_cast<std::uint16_t>(probe.masterAddress) << '"' << ':';
             printProbeInfo(res, probe);
 
             first = false;

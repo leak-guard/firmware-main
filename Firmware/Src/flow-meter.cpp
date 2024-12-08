@@ -136,9 +136,4 @@ void FlowMeterService::handleInterval()
     }
 }
 
-extern "C" void HAL_GPIO_EXTI_Callback(std::uint16_t pin)
-{
-    Device::get().getFlowMeterService()->impulseButtonPressed();
-}
-
 };

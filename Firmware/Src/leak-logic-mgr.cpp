@@ -66,7 +66,7 @@ void LeakLogicManager::updateSensorState()
 
     auto probeService = Device::get().getProbeService();
     for (auto& probe : probeService->getPairedProbesInfo()) {
-        m_sensorState.probeStates[probe.masterAddress] = probe.isAlerted && !probe.isDead;
+        m_sensorState.probeStates.at(probe.masterAddress) = probe.isAlerted && !probe.isDead;
     }
 }
 

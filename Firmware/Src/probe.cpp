@@ -134,6 +134,13 @@ bool ProbeService::setProbeIgnored(std::uint8_t masterAddress, bool ignored)
     return false;
 }
 
+void ProbeService::stopAlarm()
+{
+    for (auto& probe : m_pairedProbes) {
+        probe.isAlerted = false;
+    }
+}
+
 bool ProbeService::verifyChecksum(const ProbeMessage& packet)
 {
     // NOLINTBEGIN(*-const-cast)
@@ -363,6 +370,8 @@ std::uint8_t ProbeService::millivoltsToPercent(std::uint32_t millivolts)
 
 void ProbeService::startAlarm(ProbeInfo& probe)
 {
+    probe.isAlerted = true;
+
     if (probe.isDead && probe.isAlerted) {
         Device::get().getValveService()->blockDueTo(ValveService::BlockReason::PROBE_DIED_BLOCK);
     }

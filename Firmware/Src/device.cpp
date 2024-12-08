@@ -26,7 +26,8 @@ Device::Device()
     , m_flashDriver(&hqspi)
     , m_oledDriver(&hi2c1)
     , m_buzzerDriver(&htim3, TIM_CHANNEL_1)
-    , m_loraDriver(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port, LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin)
+    , m_loraDriver(&hspi1, LORA_DIO0_GPIO_Port, LORA_DIO0_Pin, LORA_NSS_GPIO_Port,
+          LORA_NSS_Pin, LORA_RESET_GPIO_Port, LORA_RESET_Pin, sizeof(ProbeMessage))
     , m_valveService(VALVE_OUT_GPIO_Port, VALVE_OUT_Pin)
     , m_flowMeterService(&htim1, LED_IMP_GPIO_Port, LED_IMP_Pin)
     , m_buzzerService(&htim7)
@@ -49,6 +50,7 @@ void Device::initializeDrivers()
     m_flashDriver->initialize();
     m_oledDriver->initialize();
     m_buzzerDriver->initialize();
+    m_loraDriver->initialize();
 
     m_cronService->initialize();
     m_configService->initialize();
@@ -202,6 +204,20 @@ extern "C" void I2C2_EV_IRQHandler(void)
                 = lg::Device::get().getEepromDriver()->notifyDmaFinishedFromIsr(tx);
             portYIELD_FROM_ISR(higherPriorityWoken);
         }
+    }
+}
+
+extern "C" void HAL_GPIO_EXTI_Callback(std::uint16_t pin)
+{
+    switch (pin) {
+    case FLOW_BTN_IN_Pin:
+        return lg::Device::get().getFlowMeterService()->impulseButtonPressed();
+    case LORA_DIO0_Pin:
+        return lg::Device::get().getLoraDriver()->dio0RisingEdgeIsr();
+    }
+
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        portYIELD_FROM_ISR(pdTRUE);
     }
 }
 

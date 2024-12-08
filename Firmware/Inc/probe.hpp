@@ -11,13 +11,13 @@ enum class MsgType : std::uint8_t {
     ALARM = 2
 };
 
-struct __attribute__((packed)) ProbeMessage {
+struct ProbeMessage {
     MsgType messageType;
+    uint8_t dipId;
+    uint16_t batMvol;
     uint32_t uid1;
     uint32_t uid2;
     uint32_t uid3;
-    uint8_t dipId;
-    uint16_t batMvol;
     uint32_t crc;
 };
 
@@ -55,6 +55,8 @@ public:
     getPairedProbesInfo() const { return m_pairedProbes; }
 
     bool setProbeIgnored(std::uint8_t masterAddress, bool ignored);
+
+    void stopAlarm();
 
 private:
     static constexpr auto MAX_PAIRING_TIME_MS = 120000; // 2 min

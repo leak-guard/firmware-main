@@ -1,8 +1,12 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <functional>
 
 #include <stm32f7xx_hal.h>
+
+#include <FreeRTOS.h>
+#include <task.h>
 
 namespace lg {
 
@@ -56,10 +60,13 @@ public:
     static constexpr auto SYNC_WORD = 0x12; //  7     0     default LoRa sync word
     static constexpr auto SYNC_WORD_LORAWAN = 0x34; //  7     0     sync word reserved for LoRaWAN networks
 
+    static void loraDriverEntryPoint(void* params);
+
     LoraDriver(SPI_HandleTypeDef* spi,
         GPIO_TypeDef* dio0Port, int dio0Pin,
         GPIO_TypeDef* nssPort, int nssPin,
-        GPIO_TypeDef* resetPort, int resetPin)
+        GPIO_TypeDef* resetPort, int resetPin,
+        std::size_t initialMessageSize)
         : m_spi(spi)
         , m_dio0Port(dio0Port)
         , m_dio0Pin(dio0Pin)
@@ -67,34 +74,24 @@ public:
         , m_nssPin(nssPin)
         , m_resetPort(resetPort)
         , m_resetPin(resetPin)
+        , m_initialMsgSize(initialMessageSize)
     {
     }
 
-    uint8_t SX1278_SPIRead(uint8_t addr);
-    void SX1278_SPIWrite(uint8_t addr, uint8_t cmd);
-    void SX1278_SPIBurstRead(uint8_t addr, uint8_t* rxBuf, uint8_t length);
-    void SX1278_SPIBurstWrite(uint8_t addr, uint8_t* txBuf, uint8_t length);
-    void SX1278_config();
-    void SX1278_entryLoRa();
-    void SX1278_clearLoRaIrq();
-    int SX1278_LoRaEntryRx(uint8_t length, uint32_t timeout);
-    uint8_t SX1278_LoRaRxPacket();
-    int SX1278_LoRaEntryTx(uint8_t length, uint32_t timeout);
-    int SX1278_LoRaTxPacket(uint8_t* txBuf, uint8_t length, uint32_t timeout);
-    void SX1278_init(LoraFrequency frequency, LoraPower power,
-        LoraSpreadFactor sf, LoraBandwidth bw, LoraCodingRate cr,
-        bool crcEnabled, uint8_t packetLength, uint8_t syncWord);
-    int SX1278_transmit(uint8_t* txBuf, uint8_t length,
-        uint32_t timeout);
-    int SX1278_receive(uint8_t length, uint32_t timeout);
-    uint8_t SX1278_available();
-    uint8_t SX1278_read(uint8_t* rxBuf, uint8_t length);
-    uint8_t SX1278_RSSI_LoRa();
-    uint8_t SX1278_RSSI();
-    void SX1278_standby();
-    void SX1278_sleep();
+    void initialize();
 
+    int setModeRx(uint8_t length, uint32_t timeout);
+    int setModeTx(uint8_t* txBuf, uint8_t length,
+        uint32_t timeout);
+
+    void dio0RisingEdgeIsr();
+
+    // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
+    std::function<void(const std::uint8_t*, std::size_t)> onPacket;
+    // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 private:
+    static constexpr auto LORA_MESSAGE_EVENT = 1;
+
     enum class Status {
         SLEEP,
         STANDBY,
@@ -109,6 +106,11 @@ private:
     int m_nssPin;
     GPIO_TypeDef* m_resetPort;
     int m_resetPin;
+    std::size_t m_initialMsgSize;
+
+    TaskHandle_t m_loraDriverTaskHandle {};
+    StaticTask_t m_loraDriverTaskTcb {};
+    std::array<configSTACK_DEPTH_TYPE, 256> m_loraDriverTaskStack {};
 
     std::uint32_t m_frequency {};
     std::uint8_t m_power {};
@@ -122,6 +124,31 @@ private:
     Status m_status {};
 
     std::array<std::uint8_t, MAX_PACKET> m_rxBuffer {};
+
+    void loraDriverMain();
+
+    void initializeHardware(LoraFrequency frequency, LoraPower power,
+        LoraSpreadFactor sf, LoraBandwidth bw, LoraCodingRate cr,
+        bool crcEnabled, uint8_t packetLength, uint8_t syncWord);
+    uint8_t receivePacket();
+    int transmitPacket(uint8_t* txBuf, uint8_t length, uint32_t timeout);
+    uint8_t isPacketAvailable();
+    uint8_t readBytes(uint8_t* rxBuf, uint8_t length);
+    uint8_t getLoraRssi();
+    uint8_t getFskRssi();
+    void setStandbyMode();
+    void setSleepMode();
+
+    uint8_t readSpi(uint8_t addr);
+    void writeSpi(uint8_t addr, uint8_t cmd);
+    void readSpiBurst(uint8_t addr, uint8_t* rxBuf, uint8_t length);
+    void writeSpiBurst(uint8_t addr, uint8_t* txBuf, uint8_t length);
+
+    void configure();
+    void entryLora();
+    void clearLoraIrq();
+    int entryLoraRx(uint8_t length, uint32_t timeout);
+    int entryLoraTx(uint8_t length, uint32_t timeout);
 
     // RFM98 Internal registers Address
     /********************LoRa mode***************************/
@@ -190,13 +217,13 @@ private:
     static constexpr auto FSK_RegRssiValue = 0x11;
 
     // Hardware functions
-    void hwInit();
-    void hwSetNSS(int value);
-    void hwReset();
-    void hwSPICommand(uint8_t cmd);
-    uint8_t hwSPIReadByte();
-    void hwDelayMs(uint32_t msec);
-    int hwGetDIO0();
+    void hardwareInit();
+    void hardwareSetNss(int value);
+    void hardwareReset();
+    void hardwareSpiCommand(uint8_t cmd);
+    uint8_t hardwareSpiReadByte();
+    void hardwareDelayMs(uint32_t msec);
+    int hardwareGetDio0();
 };
 
 };
