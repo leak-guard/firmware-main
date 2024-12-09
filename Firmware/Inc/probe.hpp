@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <limits>
 
 #include <leakguard/staticvector.hpp>
 
@@ -24,6 +25,7 @@ struct ProbeMessage {
 class ProbeService {
 public:
     static constexpr auto MAX_PROBES = 256;
+    static constexpr auto INVALID_RSSI = std::numeric_limits<std::int32_t>::max();
 
     struct ProbeInfo {
         std::uint32_t id1 {};
@@ -33,6 +35,7 @@ public:
         std::uint8_t batteryPercent {};
         std::uint16_t batteryMv {};
         std::uint32_t lastPingTicks {};
+        std::int32_t lastRssi {};
         bool isAlerted {};
         bool isDead {};
         bool isIgnored {};
@@ -41,7 +44,7 @@ public:
     ProbeService() = default;
 
     void initialize();
-    void receivePacket(const ProbeMessage& packet);
+    void receivePacket(const ProbeMessage& packet, std::int32_t rssi);
 
     [[nodiscard]] bool isInPairingMode() const { return m_pairingMode; }
     bool enterPairingMode();
@@ -76,9 +79,9 @@ private:
     [[nodiscard]] ProbeInfo* findProbeForPacket(const ProbeMessage& packet);
     [[nodiscard]] ProbeInfo* findProbeForAddress(std::uint8_t masterAddress);
 
-    bool handlePairingPacket(const ProbeMessage& packet);
-    void handlePingPacket(const ProbeMessage& packet);
-    void handleAlarmPacket(const ProbeMessage& packet);
+    bool handlePairingPacket(const ProbeMessage& packet, std::int32_t rssi);
+    void handlePingPacket(const ProbeMessage& packet, std::int32_t rssi);
+    void handleAlarmPacket(const ProbeMessage& packet, std::int32_t rssi);
     void updateBatteryLevel(ProbeInfo& probe, std::uint32_t newMillivolts);
     std::uint8_t millivoltsToPercent(std::uint32_t millivolts);
 

@@ -14,7 +14,7 @@ public:
     void initialize();
 
 private:
-    void handlePacket(const std::uint8_t* buffer, std::size_t length);
+    void handlePacket(const std::uint8_t* buffer, std::size_t length, std::int32_t rssi);
 };
 
 }

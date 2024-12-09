@@ -81,11 +81,17 @@ void LoraDriver::loraDriverMain()
         if (packetSize > 0) {
             if (readBytes(buffer.data(), packetSize) == packetSize) {
                 if (onPacket) {
-                    onPacket(buffer.data(), packetSize);
+                    onPacket(buffer.data(), packetSize, getLastPacketRssi());
                 }
             }
         }
     }
+}
+
+int32_t LoraDriver::getLastPacketRssi()
+{
+    int32_t registerValue = readSpi(LR_RegPktRssiValue);
+    return registerValue - 137;
 }
 
 void LoraDriver::dio0RisingEdgeIsr()

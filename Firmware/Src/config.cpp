@@ -6,6 +6,9 @@
 
 #include <crc.h>
 
+#include <FreeRTOS.h>
+#include <portmacro.h>
+
 namespace lg {
 
 static_assert(
@@ -185,10 +188,14 @@ void ConfigService::migrate()
 
 std::uint32_t ConfigService::calculateCrc(Config& config)
 {
-    return HAL_CRC_Calculate(
+    portDISABLE_INTERRUPTS();
+    auto crc = HAL_CRC_Calculate(
         &hcrc,
         reinterpret_cast<uint32_t*>(&config) + 1,
         sizeof(Config) / sizeof(std::uint32_t) - 1);
+    portENABLE_INTERRUPTS();
+
+    return crc;
 }
 
 void ConfigService::copyCurrentToStored()

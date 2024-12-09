@@ -470,6 +470,14 @@ static void printProbeInfo(Server::Response& res, const ProbeService::ProbeInfo&
     }
     res << R"(,"blocked":)";
     res << (info.isIgnored ? "true" : "false");
+    res << R"(,"is_alerted":)";
+    res << (info.isAlerted ? "true" : "false");
+    res << R"(,"last_rssi":)";
+    if (info.lastRssi == ProbeService::INVALID_RSSI) {
+        res << "null";
+    } else {
+        res << info.lastRssi;
+    }
     res << '}';
 }
 

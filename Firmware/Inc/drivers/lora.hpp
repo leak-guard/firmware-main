@@ -84,10 +84,12 @@ public:
     int setModeTx(uint8_t* txBuf, uint8_t length,
         uint32_t timeout);
 
+    int32_t getLastPacketRssi();
+
     void dio0RisingEdgeIsr();
 
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
-    std::function<void(const std::uint8_t*, std::size_t)> onPacket;
+    std::function<void(const std::uint8_t*, std::size_t, std::int32_t)> onPacket;
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 private:
     static constexpr auto LORA_MESSAGE_EVENT = 1;
@@ -134,8 +136,6 @@ private:
     int transmitPacket(uint8_t* txBuf, uint8_t length, uint32_t timeout);
     uint8_t isPacketAvailable();
     uint8_t readBytes(uint8_t* rxBuf, uint8_t length);
-    uint8_t getLoraRssi();
-    uint8_t getFskRssi();
     void setStandbyMode();
     void setSleepMode();
 
@@ -143,6 +143,9 @@ private:
     void writeSpi(uint8_t addr, uint8_t cmd);
     void readSpiBurst(uint8_t addr, uint8_t* rxBuf, uint8_t length);
     void writeSpiBurst(uint8_t addr, uint8_t* txBuf, uint8_t length);
+
+    uint8_t getLoraRssi();
+    uint8_t getFskRssi();
 
     void configure();
     void entryLora();

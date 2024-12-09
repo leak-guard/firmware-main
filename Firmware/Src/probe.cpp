@@ -30,7 +30,7 @@ void ProbeService::initialize()
     readProbesFromConfig();
 }
 
-void ProbeService::receivePacket(const ProbeMessage& packet)
+void ProbeService::receivePacket(const ProbeMessage& packet, std::int32_t rssi)
 {
     if (!verifyChecksum(packet)) {
         return;
@@ -38,7 +38,7 @@ void ProbeService::receivePacket(const ProbeMessage& packet)
 
     if (m_pairingMode) {
         if (packet.messageType == MsgType::PING) {
-            if (handlePairingPacket(packet)) {
+            if (handlePairingPacket(packet, rssi)) {
                 return;
             }
         }
@@ -46,11 +46,11 @@ void ProbeService::receivePacket(const ProbeMessage& packet)
 
     switch (packet.messageType) {
     case MsgType::PING:
-        return handlePingPacket(packet);
+        return handlePingPacket(packet, rssi);
     case MsgType::BATTERY:
-        return handlePingPacket(packet);
+        return handlePingPacket(packet, rssi);
     case MsgType::ALARM:
-        return handleAlarmPacket(packet);
+        return handleAlarmPacket(packet, rssi);
     }
 }
 
@@ -145,9 +145,13 @@ bool ProbeService::verifyChecksum(const ProbeMessage& packet)
 {
     // NOLINTBEGIN(*-const-cast)
     auto size = sizeof(ProbeMessage) - sizeof(packet.crc);
+
+    portDISABLE_INTERRUPTS();
     auto crc = HAL_CRC_Calculate(&hcrc,
         const_cast<std::uint32_t*>(reinterpret_cast<const std::uint32_t*>(&packet)),
         size / sizeof(std::uint32_t));
+    portENABLE_INTERRUPTS();
+
     // NOLINTEND(*-const-cast)
 
     return crc == packet.crc;
@@ -175,7 +179,9 @@ void ProbeService::checkAllProbesAlive()
     for (std::size_t i = 0; i < m_pairedProbes.GetSize(); ++i) {
         auto& probe = m_pairedProbes[i];
 
-        if (currentTick - probe.lastPingTicks > MAX_PROBE_INACTIVITY_MS && !probe.isDead) {
+        if (currentTick - probe.lastPingTicks > MAX_PROBE_INACTIVITY_MS
+            && !probe.isIgnored && !probe.isDead) {
+
             probe.isDead = true;
             startAlarm(probe);
         }
@@ -199,6 +205,7 @@ void ProbeService::readProbesFromConfig()
                 .batteryPercent = millivoltsToPercent(0),
                 .batteryMv = 0,
                 .lastPingTicks = currentTick,
+                .lastRssi = INVALID_RSSI,
                 .isAlerted = false,
                 .isDead = false,
                 .isIgnored = currentConfig.ignoredProbes.at(i),
@@ -232,7 +239,7 @@ auto ProbeService::findProbeForAddress(std::uint8_t masterAddress) -> ProbeInfo*
     return nullptr;
 }
 
-bool ProbeService::handlePairingPacket(const ProbeMessage& packet)
+bool ProbeService::handlePairingPacket(const ProbeMessage& packet, std::int32_t rssi)
 {
     auto config = Device::get().getConfigService();
     auto& currentConfig = config->getCurrentConfig();
@@ -258,6 +265,7 @@ bool ProbeService::handlePairingPacket(const ProbeMessage& packet)
         .batteryPercent = millivoltsToPercent(packet.batMvol),
         .batteryMv = packet.batMvol,
         .lastPingTicks = xTaskGetTickCount(),
+        .lastRssi = rssi,
         .isAlerted = false,
         .isDead = false,
         .isIgnored = false,
@@ -267,7 +275,7 @@ bool ProbeService::handlePairingPacket(const ProbeMessage& packet)
     return true;
 }
 
-void ProbeService::handlePingPacket(const ProbeMessage& packet)
+void ProbeService::handlePingPacket(const ProbeMessage& packet, std::int32_t rssi)
 {
     auto config = Device::get().getConfigService();
     auto& currentConfig = config->getCurrentConfig();
@@ -286,11 +294,12 @@ void ProbeService::handlePingPacket(const ProbeMessage& packet)
     }
 
     probe->lastPingTicks = xTaskGetTickCount();
+    probe->lastRssi = rssi;
     probe->isDead = false;
     updateBatteryLevel(*probe, packet.batMvol);
 }
 
-void ProbeService::handleAlarmPacket(const ProbeMessage& packet)
+void ProbeService::handleAlarmPacket(const ProbeMessage& packet, std::int32_t rssi)
 {
     auto config = Device::get().getConfigService();
     auto& currentConfig = config->getCurrentConfig();
@@ -309,10 +318,13 @@ void ProbeService::handleAlarmPacket(const ProbeMessage& packet)
     }
 
     probe->lastPingTicks = xTaskGetTickCount();
+    probe->lastRssi = rssi;
     probe->isDead = false;
     updateBatteryLevel(*probe, packet.batMvol);
 
-    startAlarm(*probe);
+    if (!probe->isIgnored) {
+        startAlarm(*probe);
+    }
 }
 
 void ProbeService::updateBatteryLevel(ProbeInfo& probe, std::uint32_t newMillivolts)
