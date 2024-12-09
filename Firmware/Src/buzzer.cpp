@@ -1,5 +1,8 @@
 #include <buzzer.hpp>
 #include <device.hpp>
+#include <tim.h>
+
+#include <stm32f7xx_ll_tim.h>
 
 namespace lg {
 
@@ -22,8 +25,13 @@ void BuzzerService::initialize()
     );
 }
 
-void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration, const uint8_t dutyCycle = 50)
+void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration, const uint8_t dutyCycle, const uint8_t priority)
 {
+    if (priority > m_currentPriority)
+        return;
+
+    m_currentPriority = priority;
+
     if (m_soundMode != TONE)
         setToneSoundMode();
 
@@ -35,20 +43,41 @@ void BuzzerService::playTone(const uint16_t frequency, const uint16_t duration, 
     if (frequency != 0)
         buzzer->buzzerOn();
 
+    HAL_TIM_Base_Stop_IT(m_toneTimer);
     HAL_TIM_Base_Start_IT(m_toneTimer);
 }
 
-void BuzzerService::playSequence(const ToneSequence& sequence, const SequenceMode sequenceMode = ONESHOT)
+void BuzzerService::playSequence(const ToneSequence& sequence, const SequenceMode sequenceMode, const uint8_t priority)
 {
+    if (priority > m_currentPriority)
+        return;
+
+    m_currentPriority = priority;
+
     m_sequenceMode = sequenceMode;
     m_toneSequence = sequence;
     m_toneSequenceIndex = 0;
 
-    playTone(m_toneSequence[m_toneSequenceIndex]);
+    playTone(m_toneSequence[m_toneSequenceIndex], priority);
 }
 
-void BuzzerService::playSample(const std::function<bool(uint32_t)>& sampleProvider, uint16_t sampleRate)
+void BuzzerService::stopSequence(const uint8_t priority = 0)
 {
+    if (priority < m_currentPriority)
+        return;
+
+    m_sequenceMode = OFF;
+    m_toneSequenceIndex = m_toneSequence.GetSize() - 1;
+    m_currentPriority = 0xFF;
+}
+
+void BuzzerService::playSample(const std::function<bool(uint32_t)>& sampleProvider, uint16_t sampleRate, const uint8_t priority)
+{
+    if (priority > m_currentPriority)
+        return;
+
+    m_currentPriority = priority;
+
     setSampleSoundMode(sampleRate);
     m_sampleTime = 0;
 
@@ -69,17 +98,18 @@ void BuzzerService::toneTimerCallback()
         if (m_sequenceMode) {
             m_toneSequenceIndex++;
             if (m_toneSequenceIndex >= m_toneSequence.GetSize()) {
-                if (m_sequenceMode == ONESHOT) {
-                    m_sequenceMode = OFF;
-                    return;
-                }
                 if (m_sequenceMode == LOOP) {
                     m_toneSequenceIndex = 0;
+                }
+                else {
+                    m_sequenceMode = OFF;
+                    m_currentPriority = 0xFF;
+                    return;
                 }
             }
 
             const auto tone = m_toneSequence[m_toneSequenceIndex];
-            playTone(tone);
+            playTone(tone, m_currentPriority);
         }
     } else if (m_soundMode == SAMPLE) {
         HAL_TIM_Base_Stop_IT(m_toneTimer);
@@ -95,6 +125,7 @@ void BuzzerService::toneTimerCallback()
 
 void BuzzerService::setToneTimer(const uint16_t duration)
 {
+    __HAL_TIM_SET_COUNTER(m_toneTimer, 0);
     __HAL_TIM_SetAutoreload(m_toneTimer, duration);
     __HAL_TIM_CLEAR_FLAG(m_toneTimer, TIM_FLAG_UPDATE);
 }
@@ -127,5 +158,8 @@ void BuzzerService::buzzerServiceMain()
 
 extern "C" void TIM7_IRQHandler(void)
 {
-    lg::Device::get().getBuzzerService()->toneTimerCallback();
+    if (LL_TIM_IsActiveFlag_UPDATE(htim7.Instance)) {
+        lg::Device::get().getBuzzerService()->toneTimerCallback();
+    }
+    HAL_TIM_IRQHandler(&htim7);
 }

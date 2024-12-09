@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include <FreeRTOS.h>
+#include <buzzer.hpp>
 #include <task.h>
 
 // Forward declarations
@@ -47,6 +48,8 @@ private:
     std::uint32_t m_waterAnimFrame {};
 
     volatile bool m_unlockButtonPressed { false };
+
+    BuzzerService::ToneSequence m_buttonPressSequence {};
 };
 
 };

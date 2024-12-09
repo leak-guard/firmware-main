@@ -1,4 +1,5 @@
 #pragma once
+#include <buzzer.hpp>
 #include <cstdint>
 #include <limits>
 
@@ -48,7 +49,7 @@ public:
 
     [[nodiscard]] bool isInPairingMode() const { return m_pairingMode; }
     bool enterPairingMode();
-    bool leavePairingMode();
+    bool leavePairingMode(bool playSound = true);
 
     bool unpairProbe(std::uint8_t masterAddress);
 
@@ -86,6 +87,10 @@ private:
     std::uint8_t millivoltsToPercent(std::uint32_t millivolts);
 
     void startAlarm(ProbeInfo& probe);
+
+    BuzzerService::ToneSequence m_probePairedSequence;
+    BuzzerService::ToneSequence m_enterPairingModeSequence;
+    BuzzerService::ToneSequence m_exitPairingModeSequence;
 };
 
 };

@@ -18,8 +18,6 @@ void LeakLogicManager::initialize()
     auto& config = configService->getCurrentConfig();
 
     if (config.leakLogicConfig.IsEmpty()) {
-        // TODO: Remove this - for testing only
-        addCriterion(std::make_unique<TimeBasedFlowRateCriterion>(1, 5));
         saveConfiguration();
     } else {
         loadFromString(config.leakLogicConfig);

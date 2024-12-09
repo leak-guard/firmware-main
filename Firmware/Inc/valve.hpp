@@ -1,6 +1,7 @@
 #pragma once
 #include "utc.hpp"
 
+#include <buzzer.hpp>
 #include <cstdint>
 
 #include <stm32f7xx_hal.h>
@@ -43,6 +44,8 @@ private:
     std::uint16_t m_valvePin;
     std::uint32_t m_blockReason {};
     bool m_scheduleBypass {};
+
+    BuzzerService::ToneSequence m_alarmSequence;
 
     void handleInterval();
     ScheduleBlockState checkIfBlockedBySchedule(const UtcTime& currentTime);

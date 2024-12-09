@@ -37,6 +37,9 @@ void UiService::uiServiceEntryPoint(void* params)
 
 void UiService::initialize()
 {
+    m_buttonPressSequence.Append({ 480, 50 });
+    m_buttonPressSequence.Append({ 2000, 50 });
+
     m_uiServiceTaskHandle = xTaskCreateStatic(
         &UiService::uiServiceEntryPoint /* Task function */,
         "UI Service" /* Task name */,
@@ -71,6 +74,11 @@ void UiService::uiServiceMain()
 
         if (m_unlockButtonPressed) {
             m_unlockButtonPressed = false;
+
+            {
+                auto buzzerService = Device::get().getBuzzerService();
+                buzzerService->playSequence(m_buttonPressSequence);
+            }
 
             {
                 auto probeService = Device::get().getProbeService();

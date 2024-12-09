@@ -112,7 +112,7 @@ private:
 
     TaskHandle_t m_loraDriverTaskHandle {};
     StaticTask_t m_loraDriverTaskTcb {};
-    std::array<configSTACK_DEPTH_TYPE, 256> m_loraDriverTaskStack {};
+    std::array<configSTACK_DEPTH_TYPE, 512> m_loraDriverTaskStack {};
 
     std::uint32_t m_frequency {};
     std::uint8_t m_power {};

@@ -6,6 +6,17 @@ namespace lg {
 
 void ValveService::initialize()
 {
+    m_alarmSequence.Append({ BuzzerService::Note::B_6, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::Gb7, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::B_6, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::Gb7, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::SIL, 800 });
+    m_alarmSequence.Append({ BuzzerService::Note::B_6, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::Gb7, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::B_6, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::Gb7, 400 });
+    m_alarmSequence.Append({ BuzzerService::Note::SIL, 2000 });
+
     Device::get().getCronService()->registerJob(
         [this] { Device::get().getValveService()->handleInterval(); });
 
@@ -15,7 +26,7 @@ void ValveService::initialize()
 
 void ValveService::update()
 {
-    if (isBlockedDueTo(BlockReason::STARTUP_BLOCK)) {
+    if (isBlockedDueTo(BlockReason::STARTUP_BLOCK) && Device::get().isTimeValid()) {
         clearBlockedDueTo(BlockReason::STARTUP_BLOCK);
     }
 
@@ -40,6 +51,12 @@ void ValveService::blockDueTo(BlockReason reason)
     if (reason == BlockReason::SCHEDULE_BLOCK || reason == BlockReason::STARTUP_BLOCK) {
         // Only ValveService can manage blocks due to schedule and startup
         return;
+    }
+
+    if (!isValveBlocked() && reason != BlockReason::USER_BLOCK)
+    {
+        auto buzzerService = Device::get().getBuzzerService();
+        buzzerService->playSequence(m_alarmSequence, BuzzerService::LOOP, 30);
     }
 
     setBlockedDueTo(reason);
@@ -67,6 +84,15 @@ void ValveService::unblock()
 
     if (isBlockedDueTo(BlockReason::PROBE_DIED_BLOCK)) {
         clearBlockedDueTo(BlockReason::PROBE_DIED_BLOCK);
+    }
+
+    if (isBlockedDueTo(BlockReason::STARTUP_BLOCK)) {
+        clearBlockedDueTo(BlockReason::STARTUP_BLOCK);
+    }
+
+    {
+        auto buzzerService = Device::get().getBuzzerService();
+        buzzerService->stopSequence(30);
     }
 
     update();

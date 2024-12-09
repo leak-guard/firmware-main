@@ -61,6 +61,32 @@ public:
         Bb5 = Bb4 * 2,
         B_5 = B_4 * 2,
 
+        C_6 = C_5 * 2,
+        Db6 = Db5 * 2,
+        D_6 = D_5 * 2,
+        Eb6 = Eb5 * 2,
+        E_6 = E_5 * 2,
+        F_6 = F_5 * 2,
+        Gb6 = Gb5 * 2,
+        G_6 = G_5 * 2,
+        Ab6 = Ab5 * 2,
+        A_6 = A_5 * 2,
+        Bb6 = Bb5 * 2,
+        B_6 = B_5 * 2,
+
+        C_7 = C_6 * 2,
+        Db7 = Db6 * 2,
+        D_7 = D_6 * 2,
+        Eb7 = Eb6 * 2,
+        E_7 = E_6 * 2,
+        F_7 = F_6 * 2,
+        Gb7 = Gb6 * 2,
+        G_7 = G_6 * 2,
+        Ab7 = Ab6 * 2,
+        A_7 = A_6 * 2,
+        Bb7 = Bb6 * 2,
+        B_7 = B_6 * 2,
+
         C_3 = C_4 / 2,
         Db3 = Db4 / 2,
         D_3 = D_4 / 2,
@@ -93,12 +119,14 @@ public:
     static void buzzerServiceEntryPoint(void* params);
     void initialize();
 
-    void playTone(uint16_t frequency, uint16_t duration, uint8_t dutyCycle);
-    void playTone(const Tone tone) { playTone(tone.frequency, tone.duration, tone.dutyCycle); }
+    void playTone(uint16_t frequency, uint16_t duration, uint8_t dutyCycle = 50, uint8_t priority = 128);
+    void playTone(const Tone tone, const uint8_t priority = 128) { playTone(tone.frequency, tone.duration, tone.dutyCycle, priority); }
 
-    void playSequence(const ToneSequence& sequence, SequenceMode sequenceMode);
+    void playSequence(const ToneSequence& sequence, SequenceMode sequenceMode = ONESHOT, uint8_t priority = 128);
 
-    void playSample(const std::function<bool(uint32_t)>& sampleProvider, uint16_t sampleRate);
+    void stopSequence(uint8_t priority);
+
+    void playSample(const std::function<bool(uint32_t)>& sampleProvider, uint16_t sampleRate, uint8_t priority = 128);
 
     void toneTimerCallback();
 
@@ -124,6 +152,8 @@ private:
 
     SoundMode m_soundMode = TONE;
     uint32_t m_sampleTime = 0;
+
+    uint8_t m_currentPriority = 0xFF;
 
     std::function<bool(uint32_t)> m_sampleProvider;
 };

@@ -23,6 +23,19 @@ static bool isProbeValid(
 
 void ProbeService::initialize()
 {
+    m_probePairedSequence.Append({ BuzzerService::Note::Gb6, 200 });
+    m_probePairedSequence.Append({ BuzzerService::Note::B_5, 200 });
+    m_probePairedSequence.Append({ BuzzerService::Note::Eb6, 200 });
+    m_probePairedSequence.Append({ BuzzerService::Note::Bb6, 400 });
+
+    m_enterPairingModeSequence.Append({ BuzzerService::Note::Bb6, 200 });
+    m_enterPairingModeSequence.Append({ BuzzerService::Note::Gb6, 200 });
+    m_enterPairingModeSequence.Append({ BuzzerService::Note::B_6, 400 });
+
+    m_exitPairingModeSequence.Append({ BuzzerService::Note::Gb6, 200 });
+    m_exitPairingModeSequence.Append({ BuzzerService::Note::Eb6, 200 });
+    m_exitPairingModeSequence.Append({ BuzzerService::Note::B_5, 400 });
+
     Device::get().getCronService()->registerJob([] {
         Device::get().getProbeService()->intervalHandler();
     });
@@ -60,15 +73,25 @@ bool ProbeService::enterPairingMode()
         return false;
     }
 
+    {
+        auto buzzerService = Device::get().getBuzzerService();
+        buzzerService->playSequence(m_enterPairingModeSequence);
+    }
+
     m_pairingModeEnterTime = xTaskGetTickCount();
     m_pairingMode = true;
     return true;
 }
 
-bool ProbeService::leavePairingMode()
+bool ProbeService::leavePairingMode(bool playSound)
 {
     if (!m_pairingMode) {
         return false;
+    }
+
+    if (playSound) {
+        auto buzzerService = Device::get().getBuzzerService();
+        buzzerService->playSequence(m_exitPairingModeSequence);
     }
 
     m_pairingMode = false;
@@ -219,7 +242,8 @@ auto ProbeService::findProbeForPacket(const ProbeMessage& packet) -> ProbeInfo*
     for (auto& probe : m_pairedProbes) {
         if (probe.id1 == packet.uid1
             && probe.id2 == packet.uid2
-            && probe.id3 == packet.uid3) {
+            && probe.id3 == packet.uid3
+            && probe.masterAddress == packet.dipId) {
 
             return &probe;
         }
@@ -271,7 +295,12 @@ bool ProbeService::handlePairingPacket(const ProbeMessage& packet, std::int32_t 
         .isIgnored = false,
     });
 
-    leavePairingMode();
+    {
+        auto buzzerService = Device::get().getBuzzerService();
+        buzzerService->playSequence(m_probePairedSequence);
+    }
+
+    leavePairingMode(false);
     return true;
 }
 
