@@ -41,8 +41,8 @@ void UiService::initialize()
         &UiService::uiServiceEntryPoint /* Task function */,
         "UI Service" /* Task name */,
         m_uiServiceTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        2 /* Prority */,
+        this /* Parameters */,
+        2 /* Priority */,
         m_uiServiceTaskStack.data() /* Task stack address */,
         &m_uiServiceTaskTcb /* Task control block */
     );

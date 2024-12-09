@@ -86,8 +86,8 @@ void Server::initialize()
         &Server::initHttpEntryPoint /* Task function */,
         "HTTP Init Task" /* Task name */,
         m_httpRootTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        configMAX_PRIORITIES - 1 /* Prority */,
+        this /* Parameters */,
+        configMAX_PRIORITIES - 1 /* Priority */,
         m_httpRootTaskStack.data() /* Task stack address */,
         &m_httpRootTaskTcb /* Task control block */
     );

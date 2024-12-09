@@ -23,8 +23,8 @@ void FlowMeterService::initialize()
         &FlowMeterService::flowMeterServiceEntryPoint /* Task function */,
         "Flow Meter Svc" /* Task name */,
         m_flowMeterServiceTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        6 /* Prority */,
+        this /* Parameters */,
+        6 /* Priority */,
         m_flowMeterServiceTaskStack.data() /* Task stack address */,
         &m_flowMeterServiceTaskTcb /* Task control block */
     );

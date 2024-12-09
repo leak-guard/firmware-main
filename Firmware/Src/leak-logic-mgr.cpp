@@ -29,8 +29,8 @@ void LeakLogicManager::initialize()
         &LeakLogicManager::leakLogicManagerEntryPoint /* Task function */,
         "Leak Logic Mgr" /* Task name */,
         m_leakLogicManagerTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        6 /* Prority */,
+        this /* Parameters */,
+        6 /* Priority */,
         m_leakLogicManagerTaskStack.data() /* Task stack address */,
         &m_leakLogicManagerTaskTcb /* Task control block */
     );

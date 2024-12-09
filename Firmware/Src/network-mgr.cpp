@@ -20,8 +20,8 @@ void NetworkManager::initialize()
         &NetworkManager::networkManagerEntryPoint /* Task function */,
         "Network Mgr" /* Task name */,
         m_networkManagerTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        3 /* Prority */,
+        this /* Parameters */,
+        3 /* Priority */,
         m_networkManagerTaskStack.data() /* Task stack address */,
         &m_networkManagerTaskTcb /* Task control block */
     );

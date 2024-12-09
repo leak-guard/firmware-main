@@ -19,8 +19,8 @@ void CronService::initialize()
         &CronService::cronServiceEntryPoint /* Task function */,
         "Cron Service" /* Task name */,
         m_cronServiceTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        1 /* Prority */,
+        this /* Parameters */,
+        1 /* Priority */,
         m_cronServiceTaskStack.data() /* Task stack address */,
         &m_cronServiceTaskTcb /* Task control block */
     );

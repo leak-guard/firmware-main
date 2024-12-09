@@ -53,8 +53,8 @@ void LoraDriver::initialize()
         &LoraDriver::loraDriverEntryPoint /* Task function */,
         "LoRa Driver" /* Task name */,
         m_loraDriverTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        7 /* Prority */,
+        this /* Parameters */,
+        7 /* Priority */,
         m_loraDriverTaskStack.data() /* Task stack address */,
         &m_loraDriverTaskTcb /* Task control block */
     );

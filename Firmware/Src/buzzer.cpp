@@ -15,8 +15,8 @@ void BuzzerService::initialize()
         &BuzzerService::buzzerServiceEntryPoint /* Task function */,
         "Buzzer Service" /* Task name */,
         m_buzzerServiceTaskStack.size() /* Stack size */,
-        this /* parameters */,
-        6 /* Prority */,
+        this /* Parameters */,
+        6 /* Priority */,
         m_buzzerServiceTaskStack.data() /* Task stack address */,
         &m_buzzerServiceTaskTcb /* Task control block */
     );
