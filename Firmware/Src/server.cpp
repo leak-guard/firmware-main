@@ -662,6 +662,28 @@ void Server::addWaterRoutes()
         res << todayMl;
         res << R"(})";
     });
+
+    m_server.get("/water-usage/today", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        auto historyService = Device::get().getHistoryService();
+        addJsonHeader(res);
+        res << R"({"interval_minutes":1,"usages":{)";
+
+        historyService->forEachNewestHistoryEntry(
+            [&res](std::size_t index, const HistoryService::EepromHistoryEntry& entry) {
+                if (index) {
+                    res << ',';
+                }
+
+                res << '"' << entry.timestamp << '"' << ':';
+                res << entry.volumeMl;
+            });
+
+        res << "}}";
+    });
 }
 
 bool Server::checkAuthorization(Request& req, Response& res)

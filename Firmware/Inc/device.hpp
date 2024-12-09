@@ -7,6 +7,7 @@
 #include "drivers/lora.hpp"
 #include "drivers/oled.hpp"
 #include "flow-meter.hpp"
+#include "history.hpp"
 #include "lora.hpp"
 #include "network-mgr.hpp"
 #include "probe.hpp"
@@ -36,6 +37,7 @@ public:
         OLED_ERROR,
         EEPROM_ERROR,
         FLASH_ERROR,
+        LORA_ERROR,
         ERROR_TYPE_COUNT
     };
 
@@ -90,6 +92,7 @@ public:
     ScopedResource<LoraService> getLoraService() { return m_loraService; }
     ScopedResource<ProbeService> getProbeService() { return m_probeService; }
     ScopedResource<BuzzerService> getBuzzerService() { return m_buzzerService; }
+    ScopedResource<HistoryService> getHistoryService() { return m_historyService; }
 
 private:
     static std::optional<Device> m_instance;
@@ -127,6 +130,7 @@ private:
     ProtectedResource<ProbeService> m_probeService;
     ProtectedResource<BuzzerService> m_buzzerService;
     ProtectedResource<LoraService> m_loraService;
+    ProtectedResource<HistoryService> m_historyService;
 };
 
 };

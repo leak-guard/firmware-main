@@ -7,7 +7,9 @@ namespace lg {
 void LoraService::initialize()
 {
     auto loraDriver = Device::get().getLoraDriver();
-    loraDriver->setModeRx(sizeof(ProbeMessage), 2000);
+    if (!loraDriver->setModeRx(sizeof(ProbeMessage), 2000)) {
+        Device::get().setError(Device::ErrorCode::LORA_ERROR);
+    }
 
     loraDriver->onPacket = [this](const std::uint8_t* buffer, std::size_t length, std::int32_t rssi) {
         handlePacket(buffer, length, rssi);

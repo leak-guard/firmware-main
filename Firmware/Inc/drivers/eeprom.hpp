@@ -41,6 +41,13 @@ public:
             reinterpret_cast<const uint8_t*>(&in), sizeof(T));
     }
 
+    template <typename T>
+    bool writeSmallObject(uint16_t eepromAddress, const T& in)
+    {
+        return writeBytes(eepromAddress,
+            reinterpret_cast<const uint8_t*>(&in), sizeof(T));
+    }
+
     BaseType_t notifyDmaFinishedFromIsr(bool tx);
 
     void disableWrites();

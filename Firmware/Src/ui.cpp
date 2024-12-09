@@ -292,6 +292,7 @@ void UiService::drawError(u8g2_struct* u8g2)
         "OLED error!",
         "EEPROM error!",
         "Flash memory error!",
+        "LoRa module error!",
     };
 
     drawBox(u8g2);
