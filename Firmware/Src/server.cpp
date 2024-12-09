@@ -453,6 +453,7 @@ void Server::addCriteriaRoutes()
         const auto criteriaString = StaticString<64>(doc["criteria"].as<const char*>());
 
         leakLogicManager->loadFromString(criteriaString); // TODO: Check for malformed criteria strings - WILL CAUSE A SEGFAULT if they're malformed
+        leakLogicManager->saveConfiguration();
 
         res.status(HttpStatusCode::OK_200);
     });

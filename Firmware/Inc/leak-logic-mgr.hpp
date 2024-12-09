@@ -16,6 +16,9 @@ public:
     [[nodiscard]] StaticString<64> getCriteriaString() const { return m_leakLogic.serialize(); }
     void loadFromString(const StaticString<64>& criteriaString) { m_leakLogic.loadFromString(criteriaString); }
 
+    void saveConfiguration() const;
+    void loadConfiguration();
+
 private:
     static constexpr auto UPDATE_INTERVAL_MS = 1000;
 
@@ -37,8 +40,6 @@ private:
     bool removeCriterion(const uint8_t index) { return m_leakLogic.removeCriterion(index); }
     void clearCriteria() { m_leakLogic.clearCriteria(); }
 
-    void saveConfiguration() const;
-    void loadConfiguration();
 };
 
 }
