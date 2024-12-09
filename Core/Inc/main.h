@@ -89,6 +89,7 @@ void Error_Handler(void);
 #define BUZZER_OUT_GPIO_Port GPIOC
 #define BTN_UNLOCK_Pin GPIO_PIN_0
 #define BTN_UNLOCK_GPIO_Port GPIOD
+#define BTN_UNLOCK_EXTI_IRQn EXTI0_IRQn
 #define EEPROM_WP_Pin GPIO_PIN_6
 #define EEPROM_WP_GPIO_Port GPIOD
 #define VALVE_OUT_Pin GPIO_PIN_0

@@ -311,12 +311,12 @@ void Server::addBlockRoutes()
             valveService->blockDueTo(ValveService::BlockReason::USER_BLOCK);
         } else if (action == STR("inactive")) {
             {
-                auto valveService = Device::get().getValveService();
-                valveService->unblock();
-            }
-            {
                 auto probeService = Device::get().getProbeService();
                 probeService->stopAlarm();
+            }
+            {
+                auto valveService = Device::get().getValveService();
+                valveService->unblock();
             }
         } else {
             return respondBadRequest(res);

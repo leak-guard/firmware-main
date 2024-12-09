@@ -20,6 +20,8 @@ public:
 
     void initialize();
 
+    void unlockButtonPressed();
+
 private:
     void uiServiceMain();
     void refreshLeds();
@@ -43,6 +45,8 @@ private:
 
     std::uint32_t m_waterAnimAccumulator {};
     std::uint32_t m_waterAnimFrame {};
+
+    volatile bool m_unlockButtonPressed { false };
 };
 
 };

@@ -212,6 +212,8 @@ extern "C" void HAL_GPIO_EXTI_Callback(std::uint16_t pin)
     switch (pin) {
     case FLOW_BTN_IN_Pin:
         return lg::Device::get().getFlowMeterService()->impulseButtonPressed();
+    case BTN_UNLOCK_Pin:
+        return lg::Device::get().getUiService()->unlockButtonPressed();
     case LORA_DIO0_Pin:
         return lg::Device::get().getLoraDriver()->dio0RisingEdgeIsr();
     }

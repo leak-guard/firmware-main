@@ -48,6 +48,11 @@ void UiService::initialize()
     );
 }
 
+void UiService::unlockButtonPressed()
+{
+    m_unlockButtonPressed = true;
+}
+
 void UiService::uiServiceMain()
 {
     static constexpr auto DISPLAY_REFRESH_INTERVAL_MS = 50;
@@ -62,6 +67,25 @@ void UiService::uiServiceMain()
         if (currentTicks - lastDisplayRefresh >= DISPLAY_REFRESH_INTERVAL_MS) {
             refreshDisplay();
             lastDisplayRefresh = currentTicks;
+        }
+
+        if (m_unlockButtonPressed) {
+            m_unlockButtonPressed = false;
+
+            {
+                auto probeService = Device::get().getProbeService();
+                probeService->stopAlarm();
+            }
+
+            {
+                auto valveService = Device::get().getValveService();
+                if (valveService->isValveBlocked()) {
+                    valveService->unblock();
+                }
+                else {
+                    valveService->blockDueTo(ValveService::BlockReason::USER_BLOCK);
+                }
+            }
         }
 
         vTaskDelay(10);
