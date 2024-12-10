@@ -25,6 +25,9 @@ public:
     void initialize();
     void impulseButtonPressed();
 
+    void setTotalVolumeInMl(std::uint32_t value);
+    void setInitialTodayVolumeInMl(std::uint32_t value);
+
     [[nodiscard]] std::uint32_t getCurrentFlowInMlPerMinute() const { return m_currentFlowMlPerMinute; }
     [[nodiscard]] std::uint32_t getTotalVolumeInMl() const { return m_totalMilliliters; }
     [[nodiscard]] std::uint32_t getTodayFlowInMl() const { return m_totalMilliliters - m_midnightMilliliters; }

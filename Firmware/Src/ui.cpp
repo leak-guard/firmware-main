@@ -89,8 +89,7 @@ void UiService::uiServiceMain()
                 auto valveService = Device::get().getValveService();
                 if (valveService->isValveBlocked()) {
                     valveService->unblock();
-                }
-                else {
+                } else {
                     valveService->blockDueTo(ValveService::BlockReason::USER_BLOCK);
                 }
             }

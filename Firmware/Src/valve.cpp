@@ -53,8 +53,7 @@ void ValveService::blockDueTo(BlockReason reason)
         return;
     }
 
-    if (!isValveBlocked() && reason != BlockReason::USER_BLOCK)
-    {
+    if (!isValveBlocked() && reason != BlockReason::USER_BLOCK) {
         auto buzzerService = Device::get().getBuzzerService();
         buzzerService->playSequence(m_alarmSequence, BuzzerService::LOOP, 30);
     }

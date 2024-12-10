@@ -89,6 +89,7 @@ void Device::updateRtcTime(const UtcTime& newTime)
     }
 
     getValveService()->update();
+    getHistoryService()->timeUpdated();
 }
 
 bool Device::setLocalTimezone(const char* timezoneName)
@@ -173,6 +174,39 @@ UtcTime Device::getLocalTime(
     std::int32_t timestampOffset = offset.hours * 60 * 60 + offset.minutes * 60;
 
     return UtcTime { timestamp + timestampOffset };
+}
+
+std::uint32_t Device::getLocalUtcOffset()
+{
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+
+    auto result1 = HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
+    auto result2 = HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+
+    if (result1 != HAL_OK || result2 != HAL_OK) {
+        setError(ErrorCode::UNKNOWN_ERROR);
+        return 0;
+    }
+
+    uzone_t tempZone;
+
+    portENTER_CRITICAL();
+    ::memcpy(&tempZone, m_currentZone.get(), sizeof(tempZone));
+    portEXIT_CRITICAL();
+
+    udatetime_t tzTime {};
+    tzTime.date.year = date.Year;
+    tzTime.date.month = date.Month;
+    tzTime.date.dayofmonth = date.Date;
+    tzTime.time.hour = time.Hours;
+    tzTime.time.minute = time.Minutes;
+    tzTime.time.second = time.Seconds;
+
+    uoffset_t offset;
+    ::get_current_offset(&tempZone, &tzTime, &offset);
+
+    return offset.hours * 60 * 60 + offset.minutes * 60;
 }
 
 std::uint32_t Device::getMonotonicTimestamp() const

@@ -21,6 +21,36 @@ void HistoryService::initialize()
 
     loadNewestHistoryFromEeprom();
     findFlashWriteIndex();
+
+    std::uint32_t totalVolumeMl = 0;
+    for (auto& entry : m_newestHistory) {
+        if (isEntryValid(entry) && entry.totalMl > totalVolumeMl) {
+            totalVolumeMl = entry.totalMl;
+        }
+    }
+
+    Device::get().getFlowMeterService()->setTotalVolumeInMl(totalVolumeMl);
+    m_lastTotalVolume = totalVolumeMl;
+}
+
+void HistoryService::timeUpdated()
+{
+    if (m_initialTimeDone) {
+        return;
+    }
+
+    auto currentTime = Device::get().getLocalTime();
+    std::uint32_t todayTotalMl = 0;
+
+    for (auto& entry : m_newestHistory) {
+        if (isEntryValid(entry) && areTheSameDay(currentTime, UtcTime(entry.timestamp))) {
+            todayTotalMl += entry.volumeMl;
+        }
+    }
+
+    Device::get().getFlowMeterService()->setInitialTodayVolumeInMl(todayTotalMl);
+
+    m_initialTimeDone = true;
 }
 
 void HistoryService::forEachNewestHistoryEntry(
@@ -129,7 +159,7 @@ bool HistoryService::writeNewestHistoryDataPoint()
 
     auto& entry = m_newestHistory.at(m_newestHistoryWriteIndex);
     entry.timestamp = timestamp;
-    entry.prevTimestamp = m_newestHistoryLastTimestamp;
+    entry.totalMl = currentTotalVolume;
     entry.volumeMl = volumeDelta;
     entry.checksum = calculateEntryChecksum(entry);
 
@@ -157,13 +187,13 @@ bool HistoryService::writeNewestHistoryDataPoint()
 
 std::uint32_t HistoryService::calculateEntryChecksum(const EepromHistoryEntry& entry)
 {
-    return entry.timestamp ^ entry.prevTimestamp ^ entry.volumeMl ^ 0x89ABCDEF;
+    return entry.timestamp ^ entry.totalMl ^ entry.volumeMl ^ 0x89ABCDEF;
 }
 
 bool HistoryService::isEntryValid(const EepromHistoryEntry& entry)
 {
     return entry.timestamp != INVALID_VALUE
-        && entry.prevTimestamp != INVALID_VALUE
+        && entry.totalMl != INVALID_VALUE
         && entry.volumeMl != INVALID_VALUE
         && entry.checksum == calculateEntryChecksum(entry);
 }

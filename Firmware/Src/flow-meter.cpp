@@ -41,6 +41,17 @@ void FlowMeterService::impulseButtonPressed()
     LL_TIM_SetCounter(m_timer->Instance, currentCounter);
 }
 
+void FlowMeterService::setTotalVolumeInMl(std::uint32_t value)
+{
+    m_totalMilliliters = value;
+}
+
+void FlowMeterService::setInitialTodayVolumeInMl(std::uint32_t value)
+{
+    m_midnightMilliliters = m_totalMilliliters - value;
+    m_midnightTime = Device::get().getLocalTime();
+}
+
 void FlowMeterService::flowMeterServiceMain()
 {
     while (true) {

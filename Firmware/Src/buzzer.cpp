@@ -100,8 +100,7 @@ void BuzzerService::toneTimerCallback()
             if (m_toneSequenceIndex >= m_toneSequence.GetSize()) {
                 if (m_sequenceMode == LOOP) {
                     m_toneSequenceIndex = 0;
-                }
-                else {
+                } else {
                     m_sequenceMode = OFF;
                     m_currentPriority = 0xFF;
                     return;

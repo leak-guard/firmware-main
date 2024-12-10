@@ -9,7 +9,7 @@ class HistoryService {
 public:
     struct EepromHistoryEntry {
         std::uint32_t timestamp;
-        std::uint32_t prevTimestamp;
+        std::uint32_t totalMl;
         std::uint32_t volumeMl;
         std::uint32_t checksum;
     };
@@ -27,6 +27,7 @@ public:
     HistoryService() = default;
 
     void initialize();
+    void timeUpdated();
 
     void forEachNewestHistoryEntry(std::function<void(std::size_t, const EepromHistoryEntry&)> functor);
 
@@ -39,6 +40,7 @@ private:
     std::uint32_t m_newestHistoryLastTimestamp {};
     bool m_disabled {};
     bool m_initialDumpDone {};
+    bool m_initialTimeDone {};
 
     std::uint32_t m_lastTotalVolume {};
 
