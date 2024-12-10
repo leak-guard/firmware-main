@@ -43,7 +43,8 @@ void HistoryService::timeUpdated()
     std::uint32_t todayTotalMl = 0;
 
     for (auto& entry : m_newestHistory) {
-        if (isEntryValid(entry) && areTheSameDay(currentTime, UtcTime(entry.timestamp))) {
+        auto entryLocalTime = Device::get().getLocalTimeForUtcTimestamp(entry.timestamp);
+        if (isEntryValid(entry) && areTheSameDay(currentTime, entryLocalTime)) {
             todayTotalMl += entry.volumeMl;
         }
     }
@@ -57,6 +58,7 @@ void HistoryService::forEachNewestHistoryEntry(
     std::function<void(std::size_t, const EepromHistoryEntry&)> functor)
 {
     auto localTime = Device::get().getLocalTime();
+
     auto readIndex = m_newestHistoryWriteIndex;
     std::size_t functorCallCount = 0;
 
@@ -64,7 +66,7 @@ void HistoryService::forEachNewestHistoryEntry(
         auto& entry = m_newestHistory.at(readIndex);
 
         if (isEntryValid(entry)) {
-            UtcTime entryTime(entry.timestamp);
+            auto entryTime = Device::get().getLocalTimeForUtcTimestamp(entry.timestamp);
 
             if (areTheSameDay(entryTime, localTime)) {
                 functor(functorCallCount++, entry);
@@ -145,10 +147,11 @@ std::uint16_t HistoryService::getEepromAddress(std::size_t index) const
 
 bool HistoryService::writeNewestHistoryDataPoint()
 {
-    auto localTime = Device::get().getLocalTime();
+    auto utcTime = Device::get().getUtcTime();
     auto currentTotalVolume
         = Device::get().getFlowMeterService()->getTotalVolumeInMl();
-    auto timestamp = localTime.toTimestamp();
+    auto timestamp = utcTime.toTimestamp();
+    auto localTime = Device::get().getLocalTimeForUtcTimestamp(timestamp);
 
     if (timestamp <= m_newestHistoryLastTimestamp) {
         return false;
@@ -180,7 +183,8 @@ bool HistoryService::writeNewestHistoryDataPoint()
         m_newestHistoryWriteIndex = 0;
     }
 
-    UtcTime prevDayTime(m_newestHistoryLastTimestamp);
+    auto prevDayTime = Device::get().getLocalTimeForUtcTimestamp(
+        m_newestHistoryLastTimestamp);
     m_newestHistoryLastTimestamp = timestamp;
     return !areTheSameDay(localTime, prevDayTime);
 }
@@ -200,8 +204,9 @@ bool HistoryService::isEntryValid(const EepromHistoryEntry& entry)
 
 void HistoryService::performInitialDumpToFlash()
 {
-    auto localTime = Device::get().getLocalTime();
-    auto currentTimestamp = localTime.toTimestamp();
+    auto utcTime = Device::get().getUtcTime();
+    auto currentTimestamp = utcTime.toTimestamp();
+    auto localTime = Device::get().getLocalTimeForUtcTimestamp(currentTimestamp);
     std::uint32_t latestTimestamp = 0;
 
     for (auto& entry : m_newestHistory) {
@@ -220,15 +225,15 @@ void HistoryService::performInitialDumpToFlash()
 
     // If the latest timestamp is before today, we dump data, otherwise not
 
-    UtcTime latestTime(latestTimestamp);
+    auto latestTime = Device::get().getLocalTimeForUtcTimestamp(latestTimestamp);
     if (!areTheSameDay(latestTime, localTime)) {
         sumUpDayAndWriteToFlash(latestTimestamp);
     }
 }
 
-void HistoryService::sumUpDayAndWriteToFlash(std::uint32_t timestamp)
+void HistoryService::sumUpDayAndWriteToFlash(std::uint32_t localTimestamp)
 {
-    UtcTime time(timestamp);
+    UtcTime localTime(localTimestamp);
     FlashHistoryEntry historyEntry {};
     historyEntry.fromTimestamp = INVALID_VALUE;
 
@@ -237,8 +242,8 @@ void HistoryService::sumUpDayAndWriteToFlash(std::uint32_t timestamp)
             continue;
         }
 
-        UtcTime entryTime(entry.timestamp);
-        if (!areTheSameDay(time, entryTime)) {
+        auto entryTime = Device::get().getLocalTimeForUtcTimestamp(entry.timestamp);
+        if (!areTheSameDay(localTime, entryTime)) {
             continue;
         }
 
@@ -263,9 +268,9 @@ void HistoryService::sumUpDayAndWriteToFlash(std::uint32_t timestamp)
         return;
     }
 
-    historyEntry.year = time.getYear();
-    historyEntry.month = time.getMonth();
-    historyEntry.day = time.getDay();
+    historyEntry.year = localTime.getYear();
+    historyEntry.month = localTime.getMonth();
+    historyEntry.day = localTime.getDay();
     historyEntry.crc = calculateFlashEntryCrc(historyEntry);
 
     if (m_flashDataUpToTimestamp > historyEntry.fromTimestamp) {
@@ -334,6 +339,20 @@ void HistoryService::findFlashWriteIndex()
     if (m_flashWriteIndex == FlashDriver::FLASH_PAGE_COUNT) {
         m_disabled = true;
     }
+}
+
+void HistoryService::clearEepromHistory()
+{
+    auto eepromDriver = Device::get().getEepromDriver();
+    eepromDriver->enableWrites();
+
+    for (std::size_t i = 0; i < m_newestHistory.size(); ++i) {
+        m_newestHistory.at(i).checksum ^= 0xFFFFFFFF;
+
+        eepromDriver->writeSmallObject(getEepromAddress(i), m_newestHistory.at(i));
+    }
+
+    eepromDriver->disableWrites();
 }
 
 }

@@ -65,8 +65,11 @@ public:
     void updateRtcTime(const UtcTime& newTime);
     bool setLocalTimezone(const char* timezoneName);
     bool setLocalTimezone(std::uint32_t timezoneId);
+    UtcTime getUtcTime(
+        std::uint32_t* subseconds = nullptr, std::uint32_t* secondFraction = nullptr);
     UtcTime getLocalTime(
         std::uint32_t* subseconds = nullptr, std::uint32_t* secondFraction = nullptr);
+    UtcTime getLocalTimeForUtcTimestamp(std::uint32_t timestamp);
     [[nodiscard]] std::uint32_t getLocalUtcOffset();
     [[nodiscard]] bool isTimeValid() const { return m_timeIsValid; }
     std::uint32_t getMonotonicTimestamp() const;

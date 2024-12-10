@@ -672,15 +672,13 @@ void Server::addWaterRoutes()
         addJsonHeader(res);
         res << R"({"interval_minutes":1,"usages":{)";
 
-        auto offset = Device::get().getLocalUtcOffset();
-
         historyService->forEachNewestHistoryEntry(
-            [&res, offset](std::size_t index, const HistoryService::EepromHistoryEntry& entry) {
+            [&res](std::size_t index, const HistoryService::EepromHistoryEntry& entry) {
                 if (index) {
                     res << ',';
                 }
 
-                res << '"' << (entry.timestamp - offset) << '"' << ':';
+                res << '"' << entry.timestamp << '"' << ':';
                 res << entry.volumeMl;
             });
 

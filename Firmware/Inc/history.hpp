@@ -59,6 +59,8 @@ private:
     static std::uint32_t calculateFlashEntryCrc(const FlashHistoryEntry& entry);
     bool isFlashEntryOk(const FlashHistoryEntry& entry);
     void findFlashWriteIndex();
+
+    void clearEepromHistory();
 };
 
 };

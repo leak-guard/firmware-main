@@ -130,6 +130,31 @@ bool Device::setLocalTimezone(std::uint32_t timezoneId)
     return true;
 }
 
+UtcTime Device::getUtcTime(
+    std::uint32_t* subseconds, std::uint32_t* secondFraction)
+{
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+
+    auto result1 = HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
+    auto result2 = HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+
+    if (result1 != HAL_OK || result2 != HAL_OK) {
+        setError(ErrorCode::UNKNOWN_ERROR);
+        return UtcTime {};
+    }
+
+    if (subseconds) {
+        *subseconds = time.SubSeconds;
+    }
+
+    if (secondFraction) {
+        *secondFraction = time.SecondFraction;
+    }
+
+    return UtcTime::fromHAL(date, time);
+}
+
 UtcTime Device::getLocalTime(
     std::uint32_t* subseconds, std::uint32_t* secondFraction)
 {
@@ -167,6 +192,32 @@ UtcTime Device::getLocalTime(
     tzTime.time.hour = time.Hours;
     tzTime.time.minute = time.Minutes;
     tzTime.time.second = time.Seconds;
+
+    uoffset_t offset;
+    ::get_current_offset(&tempZone, &tzTime, &offset);
+
+    std::int32_t timestampOffset = offset.hours * 60 * 60 + offset.minutes * 60;
+
+    return UtcTime { timestamp + timestampOffset };
+}
+
+UtcTime Device::getLocalTimeForUtcTimestamp(std::uint32_t timestamp)
+{
+    uzone_t tempZone;
+
+    portENTER_CRITICAL();
+    ::memcpy(&tempZone, m_currentZone.get(), sizeof(tempZone));
+    portEXIT_CRITICAL();
+
+    UtcTime utcTime(timestamp);
+
+    udatetime_t tzTime {};
+    tzTime.date.year = utcTime.getYear() - 2000;
+    tzTime.date.month = utcTime.getMonth();
+    tzTime.date.dayofmonth = utcTime.getDay();
+    tzTime.time.hour = utcTime.getHour();
+    tzTime.time.minute = utcTime.getMinute();
+    tzTime.time.second = utcTime.getSecond();
 
     uoffset_t offset;
     ::get_current_offset(&tempZone, &tzTime, &offset);

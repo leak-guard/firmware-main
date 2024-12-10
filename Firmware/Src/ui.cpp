@@ -161,7 +161,7 @@ void UiService::drawStatusBar(u8g2_struct* u8g2)
     auto localTime = Device::get().getLocalTime(&subseconds, &secondFraction);
 
     ::u8g2_ClearBuffer(u8g2);
-    ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mn);
+    ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mr);
     ::u8g2_DrawGlyph(u8g2, 0, 14, '0' + localTime.getDay() / 10);
     ::u8g2_DrawGlyph(u8g2, 8, 14, '0' + localTime.getDay() % 10);
     ::u8g2_DrawBox(u8g2, 18, 12, 2, 2);
@@ -274,11 +274,21 @@ void UiService::drawFlow(u8g2_struct* u8g2)
     }
     flowText += fractionText;
 
-    ::u8g2_DrawXBM(u8g2, 2, 30, wateranim_0_width, wateranim_0_height, ANIM_FRAMES.at(m_waterAnimFrame));
+    ::u8g2_DrawXBM(u8g2, 2, 24, wateranim_0_width, wateranim_0_height, ANIM_FRAMES.at(m_waterAnimFrame));
     ::u8g2_SetFont(u8g2, u8g2_font_profont29_mn);
     auto textWidth = ::u8g2_GetStrWidth(u8g2, flowText.ToCStr());
-    ::u8g2_DrawStr(u8g2, 106 - textWidth, 49, flowText.ToCStr());
-    ::u8g2_DrawXBM(u8g2, 107, 30, l_per_min_width, l_per_min_height, l_per_min_bits);
+    ::u8g2_DrawStr(u8g2, 106 - textWidth, 43, flowText.ToCStr());
+    ::u8g2_DrawXBM(u8g2, 107, 24, l_per_min_width, l_per_min_height, l_per_min_bits);
+
+    {
+        auto networkMgr = Device::get().getNetworkManager();
+        const auto& ip = networkMgr->getIpAddress();
+
+        ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mr);
+        ::u8g2_DrawStr(u8g2, 0, 60, "IP:");
+        ::u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
+        ::u8g2_DrawStr(u8g2, 30, 60, ip.ToCStr());
+    }
 }
 
 void UiService::drawError(u8g2_struct* u8g2)

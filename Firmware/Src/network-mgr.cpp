@@ -124,6 +124,7 @@ void NetworkManager::networkManagerMain()
         if (reconnect || m_retryConnect) {
             m_retryConnect = false;
             m_sntpConfigured = false;
+            m_ipAddress.Clear();
 
             if (m_currentMode == WifiMode::AP) {
                 Device::get().setSignalStrength(Device::SignalStrength::HOTSPOT);
@@ -158,6 +159,7 @@ void NetworkManager::networkManagerMain()
                         m_mdnsRetryLeft = 10;
                     }
 
+                    updateIpAddress();
                     configureSntp();
                 } else if (m_oneShotMode) {
                     m_oneShotMode = false;
@@ -271,6 +273,21 @@ void NetworkManager::configureSntp()
     } else {
         Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
     }
+}
+
+void NetworkManager::updateIpAddress()
+{
+    auto& esp = Device::get().getEspAtDriver();
+    StaticString<16> tempAddress;
+
+    if (esp.queryStationIp(tempAddress) != EspAtDriver::EspResponse::OK) {
+        Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+        return;
+    }
+
+    portDISABLE_INTERRUPTS();
+    m_ipAddress = tempAddress;
+    portENABLE_INTERRUPTS();
 }
 
 EspAtDriver::EspResponse NetworkManager::enableMdns()

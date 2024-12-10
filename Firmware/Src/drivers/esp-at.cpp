@@ -260,8 +260,8 @@ auto EspAtDriver::queryStationIp(StaticString<ESP_IP_STRING_SIZE>& out) -> EspRe
     auto response = sendCommandDirectAndWait("AT+CIPSTA?");
 
     if (response == EspResponse::OK) {
-        m_responseBuffer.Skip(11); // Length of "+CIPSTA:ip:"
-        m_responseBuffer.Truncate(m_responseBuffer.GetSize() - 2); // Cut off \r\n
+        m_responseBuffer.Skip(12); // Length of "+CIPSTA:ip:""
+        m_responseBuffer.Truncate(m_responseBuffer.GetSize() - 3); // Cut off "\r\n
         out = m_responseBuffer;
     }
 

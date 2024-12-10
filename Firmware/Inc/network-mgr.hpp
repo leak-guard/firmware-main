@@ -25,6 +25,7 @@ public:
     [[nodiscard]] const StaticString<64> getAccessPointPassword() const { return m_apPassword; }
 
     [[nodiscard]] const StaticString<20> getMacAddress() const { return m_macAddress; }
+    [[nodiscard]] const StaticString<16> getIpAddress() const { return m_ipAddress; }
 
 private:
     using WifiMode = EspAtDriver::EspWifiMode;
@@ -35,6 +36,7 @@ private:
     void updateRssi();
     void generateMdnsHostname();
     void configureSntp();
+    void updateIpAddress();
     EspAtDriver::EspResponse enableMdns();
     bool shouldForceApMode();
     void requestUpdateDeviceTime();
@@ -58,6 +60,7 @@ private:
     StaticString<64> m_wifiPassword;
     StaticString<32> m_mdnsHostname;
     StaticString<20> m_macAddress;
+    StaticString<16> m_ipAddress;
 
     bool m_mdnsEnabled { false };
     uint32_t m_mdnsRetryLeft { 0 };
