@@ -9,6 +9,8 @@
 #include <bitmaps/hotspot.xbm>
 #include <bitmaps/l_per_min.xbm>
 #include <bitmaps/splashscreen.xbm>
+#include <bitmaps/water_alarm.xbm>
+#include <bitmaps/water_blocked.xbm>
 #include <bitmaps/wateranim_0.xbm>
 #include <bitmaps/wateranim_1.xbm>
 #include <bitmaps/wateranim_2.xbm>
@@ -286,11 +288,32 @@ void UiService::drawFlow(u8g2_struct* u8g2)
     }
     flowText += fractionText;
 
-    ::u8g2_DrawXBM(u8g2, 2, 24, wateranim_0_width, wateranim_0_height, ANIM_FRAMES.at(m_waterAnimFrame));
-    ::u8g2_SetFont(u8g2, u8g2_font_profont29_mn);
+    bool blocked = false, alarmed = false;
+    {
+        auto valveService = Device::get().getValveService();
+        blocked = valveService->isValveBlocked();
+        alarmed = valveService->isAlarmed();
+    }
+
+    if (!blocked && !alarmed) {
+        ::u8g2_DrawXBM(u8g2, 2, 24,
+            wateranim_0_width, wateranim_0_height, ANIM_FRAMES.at(m_waterAnimFrame));
+    } else if (alarmed) {
+        ::u8g2_DrawXBM(u8g2, 2, 24,
+            water_alarm_width, water_alarm_height, water_alarm_bits);
+    } else {
+        ::u8g2_DrawXBM(u8g2, 2, 24,
+            water_blocked_width, water_blocked_height, water_blocked_bits);
+    }
+    ::u8g2_SetFont(u8g2, u8g2_font_profont29_mr);
+
     auto textWidth = ::u8g2_GetStrWidth(u8g2, flowText.ToCStr());
-    ::u8g2_DrawStr(u8g2, 106 - textWidth, 43, flowText.ToCStr());
-    ::u8g2_DrawXBM(u8g2, 107, 24, l_per_min_width, l_per_min_height, l_per_min_bits);
+    if (!alarmed) {
+        ::u8g2_DrawStr(u8g2, 106 - textWidth, 43, flowText.ToCStr());
+        ::u8g2_DrawXBM(u8g2, 107, 24, l_per_min_width, l_per_min_height, l_per_min_bits);
+    } else {
+        ::u8g2_DrawStr(u8g2, 30, 43, "ALARM!");
+    }
 
     {
         auto networkMgr = Device::get().getNetworkManager();
