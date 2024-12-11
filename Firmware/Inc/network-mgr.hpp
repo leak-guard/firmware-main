@@ -21,6 +21,8 @@ public:
     void reloadCredentials();
     void reloadCredentialsOneShot();
 
+    void mqttPublishLeak(const char* data);
+
     [[nodiscard]] const StaticString<32> getAccessPointSsid() const { return m_apSsid; }
     [[nodiscard]] const StaticString<64> getAccessPointPassword() const { return m_apPassword; }
 
@@ -41,6 +43,7 @@ private:
     bool shouldForceApMode();
     void requestUpdateDeviceTime();
     void updateDeviceTime();
+    void publishMqtt();
 
     StaticString<32> m_apSsid;
     StaticString<64> m_apPassword;
@@ -61,6 +64,10 @@ private:
     StaticString<32> m_mdnsHostname;
     StaticString<20> m_macAddress;
     StaticString<16> m_ipAddress;
+
+    StaticString<128> m_mqttBuffer;
+    int m_mqttRetriesLeft { 0 };
+    bool m_mqttConnected { false };
 
     bool m_mdnsEnabled { false };
     uint32_t m_mdnsRetryLeft { 0 };

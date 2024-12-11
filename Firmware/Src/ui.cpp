@@ -147,7 +147,19 @@ void UiService::refreshDisplay()
         }
     }
 
+    {
+        auto valveService = Device::get().getValveService();
+        if (valveService->isAlarmed()) {
+            if (m_frameCounter & 4) {
+                u8g2_SetDrawColor(u8g2, 2);
+                u8g2_DrawBox(u8g2, 0, 0, OledDriver::WIDTH, OledDriver::HEIGHT);
+                u8g2_SetDrawColor(u8g2, 1);
+            }
+        }
+    }
+
     oledDriver->sendBufferDma();
+    ++m_frameCounter;
 }
 
 void UiService::drawSplashScreen(u8g2_struct* u8g2)

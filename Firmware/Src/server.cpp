@@ -684,6 +684,40 @@ void Server::addWaterRoutes()
 
         res << "}}";
     });
+
+    m_server.get("/water-usage/:1/:2", [this](Request& req, Response& res) {
+        if (!checkAuthorization(req, res)) {
+            return;
+        }
+
+        auto historyService = Device::get().getHistoryService();
+        addJsonHeader(res);
+        res << R"({"interval_minutes":60,"usages":{)";
+
+        historyService->forEachFlashHistoryEntry(
+            req.params.at(1), req.params.at(2),
+            [&res](std::size_t index, const HistoryService::FlashHistoryEntry& entry) {
+                UtcTime entryTime(entry.fromTimestamp);
+                entryTime.setHour(0);
+                entryTime.setMinute(0);
+                entryTime.setSecond(0);
+
+                auto timestamp = entryTime.toTimestamp();
+
+                for (size_t hr = 0; hr < entry.hourVolumesMl.size(); ++hr) {
+                    if (index || hr) {
+                        res << ',';
+                    }
+
+                    res << '"' << timestamp << '"' << ':';
+                    res << entry.hourVolumesMl.at(hr);
+
+                    timestamp += 3600;
+                }
+            });
+
+        res << "}}";
+    });
 }
 
 bool Server::checkAuthorization(Request& req, Response& res)

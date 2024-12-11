@@ -30,6 +30,8 @@ public:
     void timeUpdated();
 
     void forEachNewestHistoryEntry(std::function<void(std::size_t, const EepromHistoryEntry&)> functor);
+    void forEachFlashHistoryEntry(std::uint32_t fromTimestamp, std::uint32_t toTimestamp,
+        std::function<void(std::size_t, const FlashHistoryEntry&)> functor);
 
 private:
     static constexpr auto INVALID_VALUE = 0xFFFFFFFFU;

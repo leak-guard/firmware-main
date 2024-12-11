@@ -32,6 +32,13 @@ public:
     void unblock();
 
     [[nodiscard]] bool isValveBlocked() const { return m_blockReason != 0; }
+    [[nodiscard]] bool isAlarmed() const
+    {
+        return isBlockedDueTo(BlockReason::ALARM_BLOCK)
+            || isBlockedDueTo(BlockReason::HEURISTICS_BLOCK);
+    }
+
+    [[nodiscard]] bool isValveBlockedDueTo(BlockReason reason) const { return isBlockedDueTo(reason); }
 
 private:
     enum class ScheduleBlockState {

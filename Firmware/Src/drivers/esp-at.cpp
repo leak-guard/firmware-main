@@ -424,6 +424,13 @@ auto EspAtDriver::querySntpTime(StaticString<ESP_ASCTIME_STRING_SIZE>& asctime) 
     return response;
 }
 
+auto EspAtDriver::mqttClean() -> EspResponse
+{
+    auto lock = acquireLock();
+    clearResponsePrefix();
+    return sendCommandDirectAndWait("AT+MQTTCLEAN=0");
+}
+
 auto EspAtDriver::configureMqttUser(MqttScheme scheme, const char* clientId,
     const char* username, const char* password, const char* path) -> EspResponse
 {
@@ -521,6 +528,8 @@ void EspAtDriver::initTaskMain()
         sendCommandDirectAndWait("AT+CIPDINFO=0");
         sendCommandDirectAndWait("AT+CIPV6=0");
         sendCommandDirectAndWait("AT+CIPRECVTYPE=5,0");
+        sendCommandDirectAndWait("AT+MQTTCLEAN=0");
+
         m_ready = true;
     }
 

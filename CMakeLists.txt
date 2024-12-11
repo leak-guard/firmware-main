@@ -9,6 +9,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 
+# MQTT credentials
+set(MQTT_USER "user" CACHE STRING "Leak reporting MQTT username")
+set(MQTT_PASS "pass" CACHE STRING "Leak reporting MQTT password")
+
 # Configure FreeRTOS-Kernel
 add_library(freertos_config INTERFACE)
 target_include_directories(freertos_config SYSTEM INTERFACE FreeRTOS) # The config file directory
@@ -34,6 +38,10 @@ add_executable(${PROJECT_NAME}.elf ${SOURCES} ${STARTUP_ASM} ${LINKER_SCRIPT})
 target_include_directories(${PROJECT_NAME}.elf PRIVATE "${PROJECT_BINARY_DIR}")
 target_link_libraries(${PROJECT_NAME}.elf PRIVATE ArduinoJson base64 freertos_kernel leak_logic microhttp u8g2 utz)
 target_link_libraries(${PROJECT_NAME}.elf PRIVATE stm32f7xx-hal-driver)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+    -DMQTT_USER="${MQTT_USER}"
+    -DMQTT_PASS="${MQTT_PASS}"
+)
 
 # Pass HAL config to driver
 target_include_directories(stm32f7xx-hal-driver PRIVATE Core/Inc)

@@ -80,6 +80,28 @@ void HistoryService::forEachNewestHistoryEntry(
     }
 }
 
+void HistoryService::forEachFlashHistoryEntry(
+    std::uint32_t fromTimestamp, std::uint32_t toTimestamp,
+    std::function<void(std::size_t, const FlashHistoryEntry&)> functor)
+{
+    std::size_t functorCallCount = 0;
+    auto flash = Device::get().getFlashDriver();
+
+    for (size_t i = 0; i < m_flashWriteIndex; ++i) {
+        auto entry = reinterpret_cast<FlashHistoryEntry*>(flash->getPageAddress(i));
+
+        if (entry->toTimestamp < fromTimestamp || entry->fromTimestamp > toTimestamp) {
+            continue;
+        }
+
+        if (!isFlashEntryOk(*entry)) {
+            continue;
+        }
+
+        functor(functorCallCount++, *entry);
+    }
+}
+
 void HistoryService::handleInterval()
 {
     if (m_disabled) {

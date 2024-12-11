@@ -156,6 +156,7 @@ public:
     EspResponse setSntpUpdateInterval(int seconds);
     EspResponse querySntpTime(StaticString<ESP_ASCTIME_STRING_SIZE>& asctime);
 
+    EspResponse mqttClean();
     EspResponse configureMqttUser(MqttScheme scheme, const char* clientId,
         const char* username, const char* password, const char* path);
     EspResponse mqttConnectToBroker(const char* host, std::uint16_t port = MQTT_PORT);

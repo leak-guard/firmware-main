@@ -46,6 +46,7 @@ private:
 
     std::uint32_t m_waterAnimAccumulator {};
     std::uint32_t m_waterAnimFrame {};
+    std::uint32_t m_frameCounter {};
 
     volatile bool m_unlockButtonPressed { false };
 

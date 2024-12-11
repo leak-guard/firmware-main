@@ -68,6 +68,19 @@ void LeakLogicManager::updateSensorState()
     }
 }
 
+static StaticString<8> ToHex(std::uint32_t in)
+{
+    static auto alphabet = "0123456789abcdef";
+    StaticString<8> out;
+
+    for (int i = 0; i < 8; ++i) {
+        out += alphabet[in & 0xF];
+        in >>= 4;
+    }
+
+    return out;
+}
+
 void LeakLogicManager::updateLeakLogic()
 {
     auto currentTime = Device::get().getMonotonicTimestamp();
@@ -82,7 +95,23 @@ void LeakLogicManager::updateLeakLogic()
             ? ValveService::BlockReason::ALARM_BLOCK
             : ValveService::BlockReason::HEURISTICS_BLOCK;
 
-        valveService->blockDueTo(reason);
+        if (!valveService->isAlarmed()) {
+
+            valveService->blockDueTo(reason);
+
+            if (action.getActionReason() == ActionReason::LEAK_DETECTED_BY_PROBE) {
+                auto networkMgr = Device::get().getNetworkManager();
+                StaticString<128> jsonData;
+                jsonData += R"({"alert_type":"leak","alert_data":{"reason":"probe_detected_leak","probe_id":)";
+                jsonData += StaticString<8>::Of(action.getProbeId());
+                jsonData += R"(}})";
+                networkMgr->mqttPublishLeak(jsonData.ToCStr());
+            } else {
+                auto networkMgr = Device::get().getNetworkManager();
+                networkMgr->mqttPublishLeak(
+                    R"({"alert_type": "leak","alert_data":{"reason":"flow_rate_exceeded"}})");
+            }
+        }
     }
 }
 

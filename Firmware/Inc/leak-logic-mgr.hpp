@@ -29,7 +29,7 @@ private:
 
     TaskHandle_t m_leakLogicManagerTaskHandle {};
     StaticTask_t m_leakLogicManagerTaskTcb {};
-    std::array<configSTACK_DEPTH_TYPE, 256> m_leakLogicManagerTaskStack {};
+    std::array<configSTACK_DEPTH_TYPE, 512> m_leakLogicManagerTaskStack {};
 
     void leakLogicManagerMain();
     void updateSensorState();

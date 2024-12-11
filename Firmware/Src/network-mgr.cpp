@@ -3,6 +3,8 @@
 #include <device.hpp>
 #include <utc.hpp>
 
+#include <leakguard/staticstring.hpp>
+
 #include <gpio.h>
 #include <stm32f7xx_hal.h>
 
@@ -46,6 +48,29 @@ void NetworkManager::reloadCredentialsOneShot()
 {
     m_oneShotMode = true;
     reloadCredentials();
+}
+
+static StaticString<8> ToHex(std::uint32_t in)
+{
+    static auto alphabet = "0123456789abcdef";
+    StaticString<8> out;
+
+    for (int i = 0; i < 8; ++i) {
+        out += alphabet[in & 0xF];
+        in >>= 4;
+    }
+
+    return out;
+}
+
+void NetworkManager::mqttPublishLeak(const char* data)
+{
+    portDISABLE_INTERRUPTS();
+    if (m_mqttBuffer.IsEmpty()) {
+        m_mqttBuffer = data;
+        m_mqttRetriesLeft = 10;
+    }
+    portENABLE_INTERRUPTS();
 }
 
 void NetworkManager::generateAccessPointCredentials()
@@ -180,6 +205,8 @@ void NetworkManager::networkManagerMain()
                     --m_mdnsRetryLeft;
                 }
             }
+
+            publishMqtt();
 
             switch (esp.getWifiStatus()) {
             case EspAtDriver::EspWifiStatus::DISCONNECTED:
@@ -322,6 +349,47 @@ void NetworkManager::updateDeviceTime()
         Device::get().updateRtcTime(time);
     } else {
         Device::get().setError(Device::ErrorCode::WIFI_MODULE_FAILURE);
+    }
+}
+
+void NetworkManager::publishMqtt()
+{
+    if (m_mqttBuffer.IsEmpty()) {
+        return;
+    }
+
+    if (m_mqttRetriesLeft <= 0) {
+        m_mqttBuffer.Clear();
+        return;
+    }
+
+    auto& esp = Device::get().getEspAtDriver();
+
+    if (!m_mqttConnected) {
+        esp.mqttClean();
+        esp.configureMqttUser(EspAtDriver::MqttScheme::MQTT_TCP,
+            m_mdnsHostname.ToCStr(), MQTT_USER, MQTT_PASS, "");
+        esp.mqttConnectToBroker("13.48.198.135");
+    }
+
+    StaticString<64> topic = "devices/";
+    topic += ToHex(HAL_GetUIDw0());
+    topic += '-';
+    topic += ToHex(HAL_GetUIDw1());
+    topic += '-';
+    topic += ToHex(HAL_GetUIDw2());
+    topic += "/alerts";
+
+    auto result = esp.mqttPublish(topic.ToCStr(), m_mqttBuffer.ToCStr(),
+        EspAtDriver::MqttQoS::AT_MOST_ONCE, false);
+
+    if (result == EspAtDriver::EspResponse::OK) {
+        esp.mqttClean();
+        m_mqttBuffer.Clear();
+        m_mqttRetriesLeft = 0;
+        m_mqttConnected = false;
+    } else {
+        --m_mqttRetriesLeft;
     }
 }
 
