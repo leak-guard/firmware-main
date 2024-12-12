@@ -78,12 +78,15 @@ void LoraDriver::loraDriverMain()
         xTaskNotifyWait(0, LORA_MESSAGE_EVENT, nullptr, portMAX_DELAY);
 
         auto packetSize = receivePacket();
-        if (packetSize > 0) {
+
+        while (packetSize > 0) {
             if (readBytes(buffer.data(), packetSize) == packetSize) {
                 if (onPacket) {
                     onPacket(buffer.data(), packetSize, getLastPacketRssi());
                 }
             }
+
+            packetSize = receivePacket();
         }
     }
 }
