@@ -7,8 +7,10 @@
 #define static static const
 #include <bitmaps/error.xbm>
 #include <bitmaps/hotspot.xbm>
+#include <bitmaps/ip_address.xbm>
 #include <bitmaps/l_per_min.xbm>
 #include <bitmaps/splashscreen.xbm>
+#include <bitmaps/total_flow.xbm>
 #include <bitmaps/water_alarm.xbm>
 #include <bitmaps/water_blocked.xbm>
 #include <bitmaps/wateranim_0.xbm>
@@ -315,14 +317,10 @@ void UiService::drawFlow(u8g2_struct* u8g2)
         ::u8g2_DrawStr(u8g2, 30, 43, "ALARM!");
     }
 
-    {
-        auto networkMgr = Device::get().getNetworkManager();
-        const auto& ip = networkMgr->getIpAddress();
-
-        ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mr);
-        ::u8g2_DrawStr(u8g2, 0, 60, "IP:");
-        ::u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
-        ::u8g2_DrawStr(u8g2, 30, 60, ip.ToCStr());
+    if (m_frameCounter & 128) {
+        drawIpAddress(u8g2);
+    } else {
+        drawTotalVolume(u8g2);
     }
 }
 
@@ -365,6 +363,61 @@ void UiService::drawPairing(u8g2_struct* u8g2)
     auto width = ::u8g2_GetStrWidth(u8g2, TEXT);
     ::u8g2_DrawStr(u8g2,
         (OledDriver::WIDTH - width) / 2, 45, TEXT);
+}
+
+void UiService::drawIpAddress(u8g2_struct* u8g2)
+{
+    auto networkMgr = Device::get().getNetworkManager();
+    const auto& ip = networkMgr->getIpAddress();
+
+    ::u8g2_DrawXBM(u8g2, 0, 52, ip_address_width, ip_address_height, ip_address_bits);
+    ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mr);
+
+    int pos = 125;
+
+    for (char c : ip) {
+        if (c == '.') {
+            pos -= 4;
+        } else {
+            pos -= 8;
+        }
+    }
+
+    for (char c : ip) {
+        if (c == '.') {
+            ::u8g2_DrawBox(u8g2, pos + 1, 59, 2, 2);
+            pos += 4;
+        } else {
+            ::u8g2_DrawGlyph(u8g2, pos, 61, c);
+            pos += 8;
+        }
+    }
+}
+
+void UiService::drawTotalVolume(u8g2_struct* u8g2)
+{
+    auto flowMeterService = Device::get().getFlowMeterService();
+    auto totalVolumeMl = flowMeterService->getTotalVolumeInMl();
+
+    ::u8g2_DrawXBM(u8g2, 0, 52, total_flow_width, total_flow_height, total_flow_bits);
+    ::u8g2_SetFont(u8g2, u8g2_font_crox1cb_mr);
+
+    int pos = 102;
+    for (size_t i = 0; i < 10; ++i) {
+        auto next = totalVolumeMl / 10;
+        auto digit = totalVolumeMl - next * 10;
+
+        ::u8g2_DrawGlyph(u8g2, pos, 61, digit + '0');
+
+        totalVolumeMl = next;
+        pos -= 8;
+        if (i == 2) {
+            ::u8g2_DrawBox(u8g2, pos + 5, 59, 2, 2);
+            pos -= 6;
+        }
+    }
+
+    ::u8g2_DrawGlyph(u8g2, 115, 61, 'L');
 }
 
 };

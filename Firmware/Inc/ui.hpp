@@ -36,6 +36,9 @@ private:
     void drawError(u8g2_struct* u8g2);
     void drawPairing(u8g2_struct* u8g2);
 
+    void drawIpAddress(u8g2_struct* u8g2);
+    void drawTotalVolume(u8g2_struct* u8g2);
+
     TaskHandle_t m_uiServiceTaskHandle {};
     StaticTask_t m_uiServiceTaskTcb {};
     std::array<configSTACK_DEPTH_TYPE, 1024> m_uiServiceTaskStack {};
