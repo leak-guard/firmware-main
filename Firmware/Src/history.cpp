@@ -303,7 +303,7 @@ void HistoryService::sumUpDayAndWriteToFlash(std::uint32_t localTimestamp)
 
     {
         auto flashDriver = Device::get().getFlashDriver();
-        if (!flashDriver->writeObject(m_flashWriteIndex, historyEntry)) {
+        if (!flashDriver->writeObject(m_flashWriteIndex++, historyEntry)) {
             Device::get().setError(Device::ErrorCode::FLASH_ERROR);
             m_disabled = true;
         }

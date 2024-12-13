@@ -698,21 +698,33 @@ void Server::addWaterRoutes()
             req.params.at(1), req.params.at(2),
             [&res](std::size_t index, const HistoryService::FlashHistoryEntry& entry) {
                 UtcTime entryTime(entry.fromTimestamp);
-                entryTime.setHour(0);
                 entryTime.setMinute(0);
                 entryTime.setSecond(0);
+                auto initialUtcTimestamp = entryTime.toTimestamp();
 
-                auto timestamp = entryTime.toTimestamp();
+                UtcTime localTime = Device::get().getLocalTimeForUtcTimestamp(
+                    initialUtcTimestamp);
+                auto timestamp = initialUtcTimestamp - localTime.getMinute() * 60 - localTime.getSecond();
 
-                for (size_t hr = 0; hr < entry.hourVolumesMl.size(); ++hr) {
-                    if (index || hr) {
+                int day = localTime.getDay();
+                bool first = true;
+
+                while (true) {
+                    UtcTime currentTime = Device::get().getLocalTimeForUtcTimestamp(timestamp);
+                    if (currentTime.getDay() != day) {
+                        break;
+                    }
+
+                    if (index || !first) {
                         res << ',';
                     }
 
+                    int hour = currentTime.getHour();
                     res << '"' << timestamp << '"' << ':';
-                    res << entry.hourVolumesMl.at(hr);
+                    res << entry.hourVolumesMl.at(hour);
 
                     timestamp += 3600;
+                    first = false;
                 }
             });
 
